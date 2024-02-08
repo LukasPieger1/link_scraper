@@ -1,6 +1,7 @@
-use std::io::Read;
 use reqwest::{blocking, Error, Url};
+use regex::{Regex};
 use crate::parser::MyError::{RequestError, StdIoError};
+use log::{trace};
 
 #[derive(Debug)] //TODO why do I need this here?
 pub enum MyError {
@@ -19,29 +20,61 @@ impl From<std::io::Error> for MyError {
 }
 
 pub fn get(url: Url) -> Result<String, MyError> {
-    let mut res = blocking::get(url)?;
-    let mut body = String::new();
-    res.read_to_string(&mut body)?;
+    let res = blocking::get(url)?;
+    let body = res.text()?;
 
     Ok(body)
 }
 
+/// Finds all URLs in a given string
+/// # Example
+/// ```
+/// use crate::untitled_rust_parser::parser::find_urls;
+/// let urls = find_urls("dfjaoijewfj oijoiwfjoiwjoi j´21214https://www.google.com .äwä.f.f.wä ");
+/// assert_eq!(urls, vec!["https://www.google.com"])
+/// ```
+pub fn find_urls(content: &str) -> Vec<&str> {
+    let url_regex = Regex::new(r"https?://(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}").unwrap();
+    let mut results:Vec<&str> = vec![];
+    let matches = url_regex.captures_iter(content);
+
+    for one_match in matches {
+        let url = one_match.get(0).unwrap().as_str();
+        trace! ("Found an URL! {url}");
+        results.push(url);
+    }
+
+    results
+}
+
 #[cfg(test)]
 mod tests {
+    use itertools::Itertools;
     use super::*;
 
     #[test]
-    fn it_works() {
+    fn get_some_website() {
         let url = Url::parse("https://github.com/llvm/llvm-project/issues/55760").unwrap();
-        // let url = Url::parse("https://www.google.com").unwrap(); // TODO: Please explain to me why this doesn't work :D
+        // let url = Url::parse("https://www.google.com").unwrap();
         let result = get(url);
         match  { result } {
             Ok(result_as_string) => { println!("{}", result_as_string) }
             Err(my_error) => {
-                if let RequestError(err) = my_error { println!("Request no worky :( {:?}", err); }
-                else { println!("Couldn't parse :(") }
+                if let RequestError(err) = my_error { panic!("Request no worky :( {:?}", err); }
+                else { panic!("Couldn't parse :(") }
             }
         };
+    }
 
+    #[test]
+    fn find_urls_in_website() {
+        use itertools::Itertools;
+
+        // let url = Url::parse("https://github.com/llvm/llvm-project/issues/55760").unwrap();
+        let url = Url::parse("https://www.google.com").unwrap();
+        let content = get(url).unwrap();
+        let urls: Vec<&str> = find_urls(&content)
+            .into_iter().unique().collect(); // TODO gibt es eigt einen unterschied zu `&content[..]` ?
+        println!("Found URLs: {:?}", urls)
     }
 }
