@@ -9,3 +9,6 @@ edition = "2021"
 encoding_rs = "0.8.33"
 http = "1.0.0"
 reqwest = { version = "0.11.24", features = ["blocking"] }
+regex = "1.10.3"
+log = "0.4.20"
+itertools = "0.12.1"
