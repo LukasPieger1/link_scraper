@@ -57,13 +57,21 @@ mod tests {
         let url = Url::parse("https://github.com/llvm/llvm-project/issues/55760").unwrap();
         // let url = Url::parse("https://www.google.com").unwrap();
         let result = get(url);
-        match  { result } {
+        match result {
             Ok(result_as_string) => { println!("{}", result_as_string) }
+            Err(RequestError(err)) => {
+                err
+            }
+            Err(StdIoError(err)) => {
+
+            }
             Err(my_error) => {
                 if let RequestError(err) = my_error { panic!("Request no worky :( {:?}", err); }
                 else { panic!("Couldn't parse :(") }
             }
         };
+
+        result.err().unwrap();
     }
 
     #[test]
@@ -72,9 +80,9 @@ mod tests {
 
         // let url = Url::parse("https://github.com/llvm/llvm-project/issues/55760").unwrap();
         let url = Url::parse("https://www.google.com").unwrap();
-        let content = get(url).unwrap();
-        let urls: Vec<&str> = find_urls(&content)
-            .into_iter().unique().collect(); // TODO gibt es eigt einen unterschied zu `&content[..]` ?
+        let urls = get(url).map(
+            |value| find_urls(&value).into_iter().unique().collect::<Vec<_>>()
+        ).expect("There should be something");
         println!("Found URLs: {:?}", urls)
     }
 }
