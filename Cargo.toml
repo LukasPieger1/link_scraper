@@ -7,3 +7,5 @@ edition = "2021"
 
 [dependencies]
 encoding_rs = "0.8.33"
+http = "1.0.0"
+reqwest = { version = "0.11.24", features = ["blocking"] }
