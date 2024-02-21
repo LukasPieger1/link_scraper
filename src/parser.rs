@@ -1,29 +1,42 @@
-use reqwest::{blocking, Error, Url};
+use std::fmt::{Debug, Display, Formatter};
+use reqwest::{blocking, Url};
 use regex::{Regex};
-use crate::parser::MyError::{RequestError, StdIoError};
 use log::{trace};
+use thiserror::Error;
 
-#[derive(Debug)] //TODO why do I need this here?
-pub enum MyError {
-    RequestError(reqwest::Error),
-    StdIoError(std::io::Error)
+#[derive(Error, Debug)]
+pub struct ExtractionError {
+    msg: String,
+    source: Option<Box<dyn std::error::Error>>, // TODO what am I doing wrong here? I think I can't make this an enum because my other mods want to expand what an ExtractionError can be.
 }
-impl From<reqwest::Error> for MyError {
-    fn from(value: Error) -> Self {
-        RequestError(value)
+
+impl ExtractionError {
+    pub fn new(msg: Option<&str>, source: Option<Box<dyn std::error::Error>>) -> Self {
+        let message: String = {
+            if let Some(text) = msg { text.to_string() }
+            else if let Some(err) = &source { format!("Raised by {}", err) }
+            else { "No further information available.".to_string() }
+        };
+        Self {
+            msg: message,
+            source
+        }
     }
 }
-impl From<std::io::Error> for MyError {
-    fn from(value: std::io::Error) -> Self {
-        StdIoError(value)
+
+impl Display for ExtractionError {
+    // TODO I think I'm doing something wrong here ...do I actually need to implement Display with thiserror?
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        if let Some(src) = &self.source {
+            write!(f, "ExtractionError: {}; Source: {}", self.msg, src)
+        } else {
+            write!(f, "ExtractionError: {}", self.msg)
+        }
     }
 }
 
-pub fn get(url: Url) -> Result<String, MyError> {
-    let res = blocking::get(url)?;
-    let body = res.text()?;
-
-    Ok(body)
+trait UrlContainer {
+    fn extract_urls(&self) -> Result<Vec<Url>, ExtractionError>;
 }
 
 /// Finds all URLs in a given string
@@ -45,44 +58,4 @@ pub fn find_urls(content: &str) -> Vec<&str> {
     }
 
     results
-}
-
-#[cfg(test)]
-mod tests {
-    use itertools::Itertools;
-    use super::*;
-
-    #[test]
-    fn get_some_website() {
-        let url = Url::parse("https://github.com/llvm/llvm-project/issues/55760").unwrap();
-        // let url = Url::parse("https://www.google.com").unwrap();
-        let result = get(url);
-        match result {
-            Ok(result_as_string) => { println!("{}", result_as_string) }
-            Err(RequestError(err)) => {
-                err
-            }
-            Err(StdIoError(err)) => {
-
-            }
-            Err(my_error) => {
-                if let RequestError(err) = my_error { panic!("Request no worky :( {:?}", err); }
-                else { panic!("Couldn't parse :(") }
-            }
-        };
-
-        result.err().unwrap();
-    }
-
-    #[test]
-    fn find_urls_in_website() {
-        use itertools::Itertools;
-
-        // let url = Url::parse("https://github.com/llvm/llvm-project/issues/55760").unwrap();
-        let url = Url::parse("https://www.google.com").unwrap();
-        let urls = get(url).map(
-            |value| find_urls(&value).into_iter().unique().collect::<Vec<_>>()
-        ).expect("There should be something");
-        println!("Found URLs: {:?}", urls)
-    }
 }
