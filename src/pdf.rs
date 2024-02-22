@@ -1,67 +1,79 @@
-use crate::error::ExtractionError;
-use crate::parser::{find_urls, UrlContainer};
-use itertools::{enumerate, Itertools};
-use lopdf::{Document, Error};
+use crate::parser::{find_urls};
+use itertools::Itertools;
+use lopdf::{Document, Object};
 use reqwest::Url;
-use std::path::Path;
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum PdfExtractionError {
+    #[error(transparent)]
+    LopdfError(#[from] lopdf::Error)
+}
 
 /**
-Tries to read the PDF at the given filePath and returns its contents as a String
+ * Tries to read the PDF at the given filePath and returns its contents as a String
 **/
-pub fn read_to_text(filepath: &Path) -> String {
-    let doc = Document::load(filepath).expect("Error during read");
-    let page_content_iterator = doc.page_iter().map(|page| {
-        doc.get_and_decode_page_content(page)
-            .expect("Could not decode page")
-    });
-    for (page_index, page_content) in enumerate(page_content_iterator) {
-        let mut currently_text = false;
-        for operation in page_content.operations {
-            if operation.operator == "ET" {
-                currently_text = false
-            }
-            if currently_text {
-                println!(
-                    "Operation {}: '{:?}' on page ${page_index}",
-                    operation.operator, operation.operands
-                )
-            }
-            if operation.operator == "BT" {
-                currently_text = true
-            }
-        }
+pub fn read_to_text(doc: Document) -> String {
+    let content_iterator = doc.page_iter().flat_map(|page| doc.get_page_contents(page));
+
+    // let mut text_content = vec![];
+    let mut currently_text = false;
+    for content_id in content_iterator {
+        let operation: &Object = doc.get_object(content_id).unwrap();
+        // if operation.operator == "ET" {
+        //     currently_text = false
+        // }
+        // if currently_text {
+        //     text_content.push(operation);
+        //     continue;
+        // }
+        // if operation.operator == "BT" {
+        //     currently_text = true
+        // }
     }
+
+    // TODO parse text-content
     //doc.extract_text(&doc.page_iter().map(|(page_number, _page_object_id)| page_number).collect_vec()).unwrap()
-    "Otto-Friedrich-Universität".to_string()
+    "unfinished".to_string()
 }
 
-impl UrlContainer for Document {
-    fn extract_urls(self) -> Result<Vec<Url>, ExtractionError> {
-        let all_pages = self.page_iter().map(|(page_number, _)| page_number).collect_vec();
-        let plain_text = self.extract_text(&all_pages)?;
-        Ok(find_urls(&plain_text))
-    }
-}
-
-impl From<lopdf::Error> for ExtractionError {
-    fn from(err: Error) -> Self {
-        ExtractionError::new(Some("During reading PDF-file"), Some(Box::new(err)))
-    }
+pub fn extract_urls(pdf: Document) -> Result<Vec<Url>, PdfExtractionError> {
+    let all_pages = pdf
+        .page_iter()
+        .enumerate()
+        .map(|(page_number, _page_object)| page_number as u32 + 1)
+        .collect_vec();
+    let plain_text = pdf.extract_text(&all_pages)?;
+    // TODO get text from image-data as well?
+    Ok(find_urls(&plain_text))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use lazy_static::lazy_static;
+    use std::include_bytes;
 
-    lazy_static! {
-        // TODO Is there actually no better way to create constant strings?
-        static ref TEST_PDF: String = "./assets/examples/pdf/Studienbescheinigung.pdf".to_string();
+    const TEST_PDF: &[u8]  = include_bytes!("../assets/examples/pdf/Studienbescheinigung.pdf");
+    // const TEST_PDF: &[u8]  = include_bytes!("../assets/examples/pdf/Ticket-Uppsala-Goeteborg-3141969404.pdf");
+    // const TEST_PDF: &[u8]  = include_bytes!("../assets/examples/pdf/2023-09-18_11-22-41.pdf");
+    // const TEST_PDF: &[u8]  = include_bytes!("../assets/examples/pdf/2024-01-12_23-23-34.pdf");
+    // const TEST_PDF: &[u8]  = include_bytes!("../assets/examples/pdf/eng.easyroam-App_Linux_Ubuntu_v22.pdf");
+    // const TEST_PDF: &[u8]  = include_bytes!("../assets/examples/pdf/PDF32000_2008.pdf");
+
+    #[test]
+    fn read_to_text_test() {
+        let doc = Document::load_mem(TEST_PDF).unwrap();
+        let _ = read_to_text(doc);
     }
 
     #[test]
-    fn read_text_test() {
-        let doc = read_to_text(Path::new(&TEST_PDF.to_string()));
-        assert!(doc.contains("Otto-Friedrich-Universität"))
+    fn extract_urls_from_pdf() {
+        let doc = Document::load_mem(TEST_PDF).unwrap();
+        println!("{:?}", extract_urls(doc)
+                .unwrap()
+                .iter()
+                .map(|url| url.to_string())
+                .collect_vec()
+        )
     }
 }

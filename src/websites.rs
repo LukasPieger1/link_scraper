@@ -1,31 +1,27 @@
-use crate::error::ExtractionError;
-use crate::parser::{find_urls, UrlContainer};
+use crate::parser::{find_urls};
 use reqwest::blocking::Response;
 use reqwest::{blocking, Url};
+use thiserror::Error;
 
-pub fn get(url: Url) -> Result<Response, ExtractionError> {
+#[derive(Error, Debug)]
+pub enum WebsiteExtractionError {
+    #[error(transparent)]
+    IoError(#[from] std::io::Error),
+    #[error(transparent)]
+    ReqwestError(#[from] reqwest::Error)
+}
+
+pub fn get(url: Url) -> Result<Response, WebsiteExtractionError> {
     let res: Response = blocking::get(url)?;
 
     Ok(res)
 }
 
-impl UrlContainer for Response {
-    fn extract_urls(self) -> Result<Vec<Url>, ExtractionError> {
-        let plain_text = self.text()?;
-        Ok(find_urls(&plain_text))
-    }
+fn extract_urls(response: Response) -> Result<Vec<Url>, WebsiteExtractionError> {
+    let plain_text = response.text()?;
+    Ok(find_urls(&plain_text))
 }
 
-impl From<reqwest::Error> for ExtractionError {
-    fn from(value: reqwest::Error) -> Self {
-        ExtractionError::new(Some("during request to website"), Some(Box::new(value)))
-    }
-}
-impl From<std::io::Error> for ExtractionError {
-    fn from(value: std::io::Error) -> Self {
-        ExtractionError::new(Some("During parsing "), Some(Box::new(value)))
-    }
-}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -47,7 +43,7 @@ mod tests {
     fn find_urls_in_website() {
         let url = Url::parse(&TEST_URL).unwrap();
         let site_content = get(url).unwrap();
-        let urls = site_content.extract_urls();
+        let urls = extract_urls(site_content);
         println!("Found URLs: {:?}", urls)
     }
 }

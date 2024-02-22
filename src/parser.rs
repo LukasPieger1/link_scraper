@@ -13,6 +13,8 @@ pub trait UrlContainer {
     fn extract_urls(self) -> Result<Vec<Url>, ExtractionError>;
 }
 
+//TODO further formats: docx, doc, xlsx, powerpoint, rtf, json, xml, tsv, csv
+
 /// Finds all URLs in a given string
 /// # Example
 /// ```
