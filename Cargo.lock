@@ -1187,6 +1187,7 @@ dependencies = [
  "encoding_rs",
  "http 1.0.0",
  "itertools",
+ "lazy_static",
  "log",
  "lopdf",
  "regex",
