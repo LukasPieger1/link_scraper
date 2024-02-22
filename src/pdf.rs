@@ -1,7 +1,6 @@
 use crate::parser::{find_urls};
 use itertools::Itertools;
 use lopdf::{Document, Object};
-use reqwest::Url;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -37,7 +36,7 @@ pub fn read_to_text(doc: Document) -> String {
     "unfinished".to_string()
 }
 
-pub fn extract_urls(pdf: Document) -> Result<Vec<Url>, PdfExtractionError> {
+pub fn extract_urls(pdf: Document) -> Result<Vec<String>, PdfExtractionError> {
     let all_pages = pdf
         .page_iter()
         .enumerate()
@@ -45,7 +44,7 @@ pub fn extract_urls(pdf: Document) -> Result<Vec<Url>, PdfExtractionError> {
         .collect_vec();
     let plain_text = pdf.extract_text(&all_pages)?;
     // TODO get text from image-data as well?
-    Ok(find_urls(&plain_text))
+    Ok(find_urls(&plain_text).iter().map(|it| it.to_string()).collect())
 }
 
 #[cfg(test)]
