@@ -17,9 +17,9 @@ pub fn get(url: Url) -> Result<Response, WebsiteExtractionError> {
     Ok(res)
 }
 
-fn extract_urls(response: Response) -> Result<Vec<Url>, WebsiteExtractionError> {
+fn extract_urls(response: Response) -> Result<Vec<String>, WebsiteExtractionError> {
     let plain_text = response.text()?;
-    Ok(find_urls(&plain_text))
+    Ok(find_urls(&plain_text).iter().map(|it| it.to_string()).collect())
 }
 
 #[cfg(test)]
