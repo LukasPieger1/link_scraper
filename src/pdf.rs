@@ -36,12 +36,15 @@ pub fn read_to_text(doc: Document) -> String {
     "unfinished".to_string()
 }
 
+pub fn extract_urls_new(pdf: &[u8]) -> Result<Vec<String>, PdfExtractionError> {
+    let out = pdf_extract::extract_text_from_mem(pdf).unwrap();
+    Ok(find_urls(&out).iter().map(|it| it.to_string()).collect())
+}
+
 pub fn extract_urls(pdf: Document) -> Result<Vec<String>, PdfExtractionError> {
-    let all_pages = pdf
-        .page_iter()
-        .enumerate()
+    let all_pages:Vec<u32> = pdf.page_iter().enumerate()
         .map(|(page_number, _page_object)| page_number as u32 + 1)
-        .collect_vec();
+        .collect();
     let plain_text = pdf.extract_text(&all_pages)?;
     // TODO get text from image-data as well?
     Ok(find_urls(&plain_text).iter().map(|it| it.to_string()).collect())
@@ -73,6 +76,16 @@ mod tests {
                 .iter()
                 .map(|url| url.to_string())
                 .collect_vec()
+        )
+    }
+
+    #[test]
+    fn extract_urls_from_pdf_new() {
+        println!("{:?}", extract_urls_new(TEST_PDF)
+            .unwrap()
+            .iter()
+            .map(|url| url.to_string())
+            .collect_vec()
         )
     }
 }
