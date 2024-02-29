@@ -1,4 +1,4 @@
-use crate::parser::{find_urls};
+use crate::link_extractor::{find_urls};
 use itertools::Itertools;
 use lopdf::{Document, Object};
 use thiserror::Error;
@@ -36,11 +36,13 @@ pub fn read_to_text(doc: Document) -> String {
     "unfinished".to_string()
 }
 
+#[cfg(feature = "link_extraction")]
 pub fn extract_urls_new(pdf: &[u8]) -> Result<Vec<String>, PdfExtractionError> {
     let out = pdf_extract::extract_text_from_mem(pdf).unwrap();
     Ok(find_urls(&out).iter().map(|it| it.to_string()).collect())
 }
 
+#[cfg(feature = "link_extraction")]
 pub fn extract_urls(pdf: Document) -> Result<Vec<String>, PdfExtractionError> {
     let all_pages:Vec<u32> = pdf.page_iter().enumerate()
         .map(|(page_number, _page_object)| page_number as u32 + 1)
