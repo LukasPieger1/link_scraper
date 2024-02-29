@@ -1,4 +1,4 @@
-use crate::parser::{find_urls};
+use crate::link_extractor::{find_urls};
 use reqwest::blocking::Response;
 use reqwest::{blocking, Url};
 use thiserror::Error;
@@ -17,6 +17,7 @@ pub fn get(url: Url) -> Result<Response, WebsiteExtractionError> {
     Ok(res)
 }
 
+#[cfg(feature = "link_extraction")]
 fn extract_urls(response: Response) -> Result<Vec<String>, WebsiteExtractionError> {
     let plain_text = response.text()?;
     Ok(find_urls(&plain_text).iter().map(|it| it.to_string()).collect())
