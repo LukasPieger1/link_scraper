@@ -1,4 +1,4 @@
-use crate::link_extractor::{find_urls};
+use crate::link_extractor::find_links;
 use reqwest::blocking::Response;
 use reqwest::{blocking, Url};
 use thiserror::Error;
@@ -8,19 +8,35 @@ pub enum WebsiteExtractionError {
     #[error(transparent)]
     IoError(#[from] std::io::Error),
     #[error(transparent)]
-    ReqwestError(#[from] reqwest::Error)
+    ReqwestError(#[from] reqwest::Error),
 }
 
 pub fn get(url: Url) -> Result<Response, WebsiteExtractionError> {
     let res: Response = blocking::get(url)?;
-
     Ok(res)
 }
 
 #[cfg(feature = "link_extraction")]
-fn extract_urls(response: Response) -> Result<Vec<String>, WebsiteExtractionError> {
+fn extract_links(response: Response) -> Result<Vec<String>, WebsiteExtractionError> {
     let plain_text = response.text()?;
-    Ok(find_urls(&plain_text).iter().map(|it| it.to_string()).collect())
+    Ok(find_links(&plain_text)
+        .iter()
+        .map(|it| it.to_string())
+        .collect())
+}
+
+#[cfg(feature = "link_extraction")]
+pub fn extract_links_from_url(url: Url) -> Result<Vec<String>, WebsiteExtractionError> {
+    extract_links(get(url)?)
+}
+
+#[cfg(feature = "link_extraction")]
+pub fn extract_links_from_html(html_byte_array: &str) -> Vec<String> {
+    // TODO do you want this to be a &[u8] instead?
+    find_links(html_byte_array)
+        .iter()
+        .map(|it| it.to_string())
+        .collect()
 }
 
 #[cfg(test)]
@@ -44,7 +60,7 @@ mod tests {
     fn find_urls_in_website() {
         let url = Url::parse(&TEST_URL).unwrap();
         let site_content = get(url).unwrap();
-        let urls = extract_urls(site_content);
+        let urls = extract_links(site_content);
         println!("Found URLs: {:?}", urls)
     }
 }
