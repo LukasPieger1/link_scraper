@@ -1,5 +1,12 @@
+#![allow(non_snake_case)]
+
+use std::char::{decode_utf16, DecodeUtf16Error};
+use std::str::from_utf8;
 use lopdf::{Object};
 use strum_macros::EnumString;
+use crate::formats::pdf::pdf_operator::PdfOperator::{TJ, Tj};
+use crate::formats::pdf::PdfExtractionError;
+use crate::formats::pdf::PdfExtractionError::UnexpectedPdfOperandError;
 
 #[allow(clippy::upper_case_acronyms)]
 #[allow(non_camel_case_types)]
@@ -239,9 +246,9 @@ pub enum PdfOperator {
     ///
     /// __More info in the book__
     #[strum(serialize = "'")] SingleQuote,
-    /// Move to the next line and show a text string, using aw as the word spacing
-    /// and ac as the character spacing (setting the corresponding parameters in
-    /// the text state). aw and ac shall be numbers expressed in unscaled text
+    /// Move to the next line and show a text string, using a_w as the word spacing
+    /// and a_c as the character spacing (setting the corresponding parameters in
+    /// the text state). a_w and ac shall be numbers expressed in unscaled text
     /// space units.
     ///
     /// __More info in the book__
@@ -436,38 +443,37 @@ pub enum PdfOperator {
     #[strum(serialize = "EX")] EX
 }
 
-pub fn get_operands_Tj(operands: &Vec<Object>) -> String { //TODO unwraps
-    std::str::from_utf8(operands.first().unwrap().as_str().unwrap()).unwrap_or("ERROR").to_string()
-}
-
-pub enum I64OrString { // TODO I dont know how else to do this, but this seems bad
+pub enum TJArrayEntries { // TODO This is just a subset of lopdf::Object Enum-variants...is there a better way to solve this? ...this is gonna get annoying with more and more arrays of possible types
     Integer(i64),
     String(String)
 }
-pub fn get_operands_TJ(operands: &Vec<Object>) -> Vec<I64OrString> { // TODO clean unwraps
-    operands.first().unwrap().as_array().unwrap().iter()
-        .map(|value| match value {
-            Object::Integer(i) => I64OrString::Integer(*i),
-            Object::String(s, format) => I64OrString::String(std::str::from_utf8(s).unwrap_or("ERROR").parse().unwrap()),
-            _ => panic!("TJ array should only have Integer or string values")
-        }).collect()
+
+fn from_utf16(slice: &[u8]) -> Result<String, PdfExtractionError> {
+    let iter = (0..slice.len()/2)
+        .map(|i| u16::from_be_bytes([slice[2*i], slice[2*i+1]]));
+    Ok(decode_utf16(iter)
+        .map(|res| res)
+        .collect::<Result<String, DecodeUtf16Error>>()?)
+
 }
 
-pub enum OperandType {
-    Null,
-    Boolean,
-    Integer,
-    Real,
-    Name,
-    String,
-    Array,
-    Dictionary,
-    Stream,
-    Reference,
+pub fn get_operands_Tj(operands: &Vec<Object>) -> Result<String, PdfExtractionError> { // TODO is there a better solution than to_owned here?
+    Ok(from_utf8(operands.first().ok_or(UnexpectedPdfOperandError(Tj, operands.to_owned()))?.as_str()?).unwrap_or(&*format!("ERROR {:?}", operands)).parse()?)
+}
+pub fn get_operands_TJ(operands: &Vec<Object>) -> Result<Vec<TJArrayEntries>, PdfExtractionError> { // TODO is there a better solution than to_owned here?
+    let ret = operands
+        .first().ok_or(UnexpectedPdfOperandError(Tj, operands.to_owned()))?
+        .as_array()?.iter()
+        .map(|value| match value {
+            Object::Integer(i) => Ok(TJArrayEntries::Integer(*i)),
+            Object::String(s, _format) => Ok(TJArrayEntries::String(from_utf8(s).unwrap_or(&*format!("ERROR {:?}", operands)).parse()?)),
+            _ => Err(UnexpectedPdfOperandError(TJ, operands.to_owned()))
+        }).collect();
+    ret
 }
 
 impl PdfOperator {
-    fn allowed_operands(&self) -> Vec<OperandType> {
+    fn allowed_operands(&self) -> Vec<String> { // TODO replace this with a more sensible implementation
         match self {
             //General graphics state
             PdfOperator::w => {unimplemented!()} // lineWidth
