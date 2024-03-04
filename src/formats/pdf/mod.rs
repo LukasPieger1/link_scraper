@@ -1,5 +1,7 @@
 mod pdf_operator;
 
+use std::char::{DecodeUtf16Error};
+use std::convert::Infallible;
 use std::string::String;
 use crate::link_extractor::find_links;
 use lopdf::{Document, Object};
@@ -7,7 +9,8 @@ use thiserror::Error;
 use std::str::{FromStr, Utf8Error};
 use log::error;
 use lopdf::content::Operation;
-use crate::formats::pdf::pdf_operator::{get_operands_Tj, get_operands_TJ, I64OrString, PdfOperator};
+use pdf_extract::OutputError;
+use crate::formats::pdf::pdf_operator::{get_operands_Tj, get_operands_TJ, TJArrayEntries, PdfOperator};
 use crate::formats::pdf::PdfExtractionError::UnterminatedTextObjectError;
 use crate::formats::pdf::pdf_operator::PdfOperator::{TJ, Tj};
 
@@ -21,6 +24,14 @@ pub enum PdfExtractionError {
     UnterminatedTextObjectError,
     #[error(transparent)]
     UTF8Error(#[from] Utf8Error),
+    #[error("PDF operator did not yield expected operands.")]
+    UnexpectedPdfOperandError(PdfOperator, Vec<Object>), // TODO ...how do I give this additional info on error?
+    #[error(transparent)]
+    UTF16Error(#[from] DecodeUtf16Error),
+    #[error(transparent)]
+    OutputError(#[from] OutputError),
+    #[error(transparent)]
+    InfalliableError(#[from] Infallible)
 }
 
 #[derive(Debug)]
@@ -34,11 +45,11 @@ impl TextObject {
             if operator == Tj || operator == TJ {
                 let text;
                 if operator == Tj {
-                    text = get_operands_Tj(&operation.operands)
+                    text = get_operands_Tj(&operation.operands)?
                 } else {
-                    text = get_operands_TJ(&operation.operands).iter()
+                    text = get_operands_TJ(&operation.operands)?.iter()
                         .filter_map(|int_or_string| {
-                            if let I64OrString::String(value) = int_or_string { Some(value.to_string()) }
+                            if let TJArrayEntries::String(value) = int_or_string { Some(value.to_string()) }
                             else { None }
                         }).collect()
                 }
@@ -54,7 +65,7 @@ impl TextObject {
 **/
 pub fn read_to_text(doc: Document) -> Result<String, PdfExtractionError> {
     let mut content = doc.page_iter()
-        .flat_map(|page_id| doc.get_and_decode_page_content(page_id).unwrap().operations);
+        .flat_map(|page_id| doc.get_and_decode_page_content(page_id).unwrap().operations); // TODO how do I get rid of this unwrap?
 
     let mut text_objects = vec![];
 
@@ -97,10 +108,9 @@ pub fn extract_links_simple(pdf: Document) -> Result<Vec<String>, PdfExtractionE
 
 #[cfg(feature = "link_extraction")]
 pub fn extract_links_simpler(input: &[u8]) -> Result<Vec<String>, PdfExtractionError> {
-    let ret = find_links(&pdf_extract::extract_text_from_mem(input).unwrap())
-        .iter()
-        .map(|it| it.to_string())
-        .collect();
+    let ret =
+        find_links(&pdf_extract::extract_text_from_mem(input)?).iter()
+        .map(|it| it.to_string()).collect();
     Ok(ret)
 }
 
@@ -116,29 +126,18 @@ mod tests {
     use itertools::Itertools;
     use std::include_bytes;
 
-    // const TEST_PDF: &[u8]  = include_bytes!("../../../assets/examples/pdf/Studienbescheinigung.pdf");
-    const TEST_PDF: &[u8] = include_bytes!("../../../assets/examples/pdf/Ticket-Uppsala-Goeteborg-3141969404.pdf");
+    const TEST_PDF: &[u8]  = include_bytes!("../../../assets/examples/pdf/Studienbescheinigung.pdf");
+    // const TEST_PDF: &[u8] = include_bytes!("../../../assets/examples/pdf/Ticket-Uppsala-Goeteborg-3141969404.pdf");
     // const TEST_PDF: &[u8]  = include_bytes!("../../../assets/examples/pdf/2023-09-18_11-22-41.pdf");
     // const TEST_PDF: &[u8]  = include_bytes!("../../../assets/examples/pdf/2024-01-12_23-23-34.pdf");
     // const TEST_PDF: &[u8]  = include_bytes!("../../../assets/examples/pdf/eng.easyroam-App_Linux_Ubuntu_v22.pdf");
     // const TEST_PDF: &[u8]  = include_bytes!("../../../assets/examples/pdf/PDF32000_2008.pdf");
 
     #[test]
-    fn read_to_text_test() {
+    fn extract_links_from_pdf() {
         let doc = Document::load_mem(TEST_PDF).unwrap();
-        let _ = read_to_text(doc);
-    }
-
-    #[test]
-    fn extract_urls_from_pdf() {
-        let doc = Document::load_mem(TEST_PDF).unwrap();
-        println!(
-            "{:?}",
-            extract_links_simple(doc)
-                .unwrap()
-                .iter()
-                .map(|url| url.to_string())
-                .collect_vec()
+        println!("{:?}", extract_links_simple(doc).unwrap().iter()
+                .map(|url| url.to_string()).collect_vec()
         )
     }
 
