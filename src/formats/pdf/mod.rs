@@ -1,12 +1,13 @@
 mod pdf_operator;
 
+use std::string::String;
 use crate::link_extractor::find_links;
 use lopdf::{Document, Object};
 use thiserror::Error;
 use std::str::{FromStr, Utf8Error};
 use log::error;
 use lopdf::content::Operation;
-use crate::formats::pdf::pdf_operator::PdfOperator;
+use crate::formats::pdf::pdf_operator::{get_operands_Tj, get_operands_TJ, I64OrString, PdfOperator};
 use crate::formats::pdf::PdfExtractionError::UnterminatedTextObjectError;
 use crate::formats::pdf::pdf_operator::PdfOperator::{TJ, Tj};
 
@@ -31,21 +32,17 @@ impl TextObject {
         for operation in &self.0 {
             let operator = PdfOperator::from_str(&operation.operator).map_err(PdfExtractionError::from)?;
             if operator == Tj || operator == TJ {
-                for operand in &operation.operands {
-                    match operand {
-                        // Object::Null => {}
-                        // Object::Boolean(b) => { str += &format!("{}", b); }
-                        // Object::Integer(i) => { str += &format!("{}", i); }
-                        // Object::Real(n) => { str += &format!("{}", n); }
-                        // Object::Name(n) => { str += &format!("{:?}", n); }
-                        // Object::String(values, _format) => { str += str::from_utf8(values).unwrap_or("ERROR")}
-                        Object::Array(a) => { str += &format!("{:?}", a); }
-                        // Object::Dictionary(d) => { str += &format!("{:?}", d); }
-                        // Object::Stream(s) => { str += &format!("{:?}", s); }
-                        // Object::Reference(r) => { str += &format!("{:?}", r); }
-                        _ => {}
-                    }
+                let text;
+                if operator == Tj {
+                    text = get_operands_Tj(&operation.operands)
+                } else {
+                    text = get_operands_TJ(&operation.operands).iter()
+                        .filter_map(|int_or_string| {
+                            if let I64OrString::String(value) = int_or_string { Some(value.to_string()) }
+                            else { None }
+                        }).collect()
                 }
+                str += &text;
             }
         }
         Ok(str)
@@ -119,8 +116,8 @@ mod tests {
     use itertools::Itertools;
     use std::include_bytes;
 
-    const TEST_PDF: &[u8]  = include_bytes!("../../../assets/examples/pdf/Studienbescheinigung.pdf");
-    // const TEST_PDF: &[u8] = include_bytes!("../../../assets/examples/pdf/Ticket-Uppsala-Goeteborg-3141969404.pdf");
+    // const TEST_PDF: &[u8]  = include_bytes!("../../../assets/examples/pdf/Studienbescheinigung.pdf");
+    const TEST_PDF: &[u8] = include_bytes!("../../../assets/examples/pdf/Ticket-Uppsala-Goeteborg-3141969404.pdf");
     // const TEST_PDF: &[u8]  = include_bytes!("../../../assets/examples/pdf/2023-09-18_11-22-41.pdf");
     // const TEST_PDF: &[u8]  = include_bytes!("../../../assets/examples/pdf/2024-01-12_23-23-34.pdf");
     // const TEST_PDF: &[u8]  = include_bytes!("../../../assets/examples/pdf/eng.easyroam-App_Linux_Ubuntu_v22.pdf");

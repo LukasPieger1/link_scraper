@@ -1,3 +1,4 @@
+use lopdf::{Object};
 use strum_macros::EnumString;
 
 #[allow(clippy::upper_case_acronyms)]
@@ -433,6 +434,23 @@ pub enum PdfOperator {
     /// Ignore any unrecognized operands and operators from previous matching
     /// BX onward.
     #[strum(serialize = "EX")] EX
+}
+
+pub fn get_operands_Tj(operands: &Vec<Object>) -> String { //TODO unwraps
+    std::str::from_utf8(operands.first().unwrap().as_str().unwrap()).unwrap_or("ERROR").to_string()
+}
+
+pub enum I64OrString { // TODO I dont know how else to do this, but this seems bad
+    Integer(i64),
+    String(String)
+}
+pub fn get_operands_TJ(operands: &Vec<Object>) -> Vec<I64OrString> { // TODO clean unwraps
+    operands.first().unwrap().as_array().unwrap().iter()
+        .map(|value| match value {
+            Object::Integer(i) => I64OrString::Integer(*i),
+            Object::String(s, format) => I64OrString::String(std::str::from_utf8(s).unwrap_or("ERROR").parse().unwrap()),
+            _ => panic!("TJ array should only have Integer or string values")
+        }).collect()
 }
 
 pub enum OperandType {
