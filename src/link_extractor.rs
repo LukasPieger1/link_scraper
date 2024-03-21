@@ -1,5 +1,6 @@
 use lazy_static::lazy_static;
 use linkify::LinkFinder;
+use linkify::LinkKind::{Url};
 
 lazy_static! {
     static ref FINDER: LinkFinder = LinkFinder::new();
@@ -15,5 +16,7 @@ lazy_static! {
 /// assert_eq!(urls, vec!["https://www.google.com"])
 /// ```
 pub fn find_links(content: &str) -> Vec<&str> {
-    FINDER.links(content).map(|link| link.as_str()).collect()
+    FINDER.links(content)
+        .filter(|link| link.kind().eq(&Url))
+        .map(|link| link.as_str()).collect()
 }
