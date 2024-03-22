@@ -17,7 +17,7 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, XmlExtractionError> {
 
 #[cfg(test)]
 mod tests {
-    use crate::formats::xml::extract_links;
+    use super::*;
 
     const TEST_XML: &[u8] = include_bytes!("../../assets/examples/xml/test.xml");
     #[test]
