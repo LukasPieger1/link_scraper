@@ -1384,6 +1384,7 @@ dependencies = [
  "linkify",
  "log",
  "mupdf",
+ "mupdf-sys",
  "regex",
  "reqwest",
  "thiserror",
