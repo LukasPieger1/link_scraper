@@ -1,4 +1,4 @@
 #[cfg(feature = "link_extraction")]
 pub mod link_extractor;
-#[cfg(any(feature = "pdf", feature = "websites"))]
+#[cfg(any(feature = "pdf", feature = "websites", feature = "docx", feature = "xml"))]
 pub mod formats;
