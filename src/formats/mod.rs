@@ -2,7 +2,9 @@
 pub mod pdf;
 #[cfg(feature = "websites")]
 pub mod websites;
-#[cfg(feature = "xml")]
+#[cfg(feature = "raw_text")]
 pub mod raw_text;
-#[cfg(feature = "xml")]
+#[cfg(feature = "ooxml")]
 pub mod ooxml;
+#[cfg(feature = "rtf")]
+pub mod rtf;

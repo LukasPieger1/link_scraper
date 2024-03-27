@@ -1249,6 +1249,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "rtf-parser"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e0add094f6933ea633e0fd5f130a8181850999c71e39139a3c21afc70bea2f9b"
+
+[[package]]
 name = "rustc-demangle"
 version = "0.1.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1713,6 +1719,7 @@ dependencies = [
  "mupdf",
  "regex",
  "reqwest",
+ "rtf-parser",
  "thiserror",
  "xml-rs",
  "zip",
