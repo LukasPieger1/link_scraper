@@ -19,6 +19,7 @@ linkify = { version = "0.10.0", optional = true }
 mupdf = { version = "0.4.2", optional = true }
 zip = { version = "0.6.6", optional = true }
 xml-rs = { version = "0.8.19", optional = true }
+rtf-parser = { version = "0.2.0", optional = true }
 
 [features]
 default = ["pdf", "link_extraction"]
@@ -28,4 +29,5 @@ pdf = ["dep:mupdf"]
 websites = ["dep:reqwest", "dep:http"]
 raw_text = []
 ooxml = ["dep:xml-rs", "dep:zip"]
+rtf = ["dep:rtf-parser"]
 

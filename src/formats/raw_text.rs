@@ -3,12 +3,12 @@ use thiserror::Error;
 use crate::link_extractor::find_links;
 
 #[derive(Error, Debug)]
-pub enum XmlExtractionError {
+pub enum RawTextExtractionError {
     #[error(transparent)]
     IoError(#[from] std::io::Error),
 }
 
-pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, XmlExtractionError> {
+pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, RawTextExtractionError> {
     let mut buf_reader = BufReader::new(bytes);
     let mut contents = String::new();
     buf_reader.read_to_string(&mut contents)?;
