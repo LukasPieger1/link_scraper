@@ -26,6 +26,6 @@ link_extraction = ["dep:linkify"]
 regex_extraction = ["dep:regex"]
 pdf = ["dep:mupdf"]
 websites = ["dep:reqwest", "dep:http"]
-xml = []
+raw_text = []
 ooxml = ["dep:xml-rs", "dep:zip"]
 
