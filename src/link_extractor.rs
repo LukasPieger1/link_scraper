@@ -8,7 +8,7 @@ lazy_static! {
     static ref FINDER: LinkFinder = LinkFinder::new();
 }
 
-//TODO further formats: doc, rtf, json, tsv, csv
+//TODO further formats: doc, rtf, odf
 
 /// Finds all URLs in a given string
 /// # Example
