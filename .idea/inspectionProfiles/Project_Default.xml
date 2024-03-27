@@ -7,7 +7,10 @@
           <option value="http://0.0.0.0" />
           <option value="http://127.0.0.1" />
           <option value="http://activemq.apache.org/schema/" />
+          <option value="http://calibre-ebook.com" />
           <option value="http://cxf.apache.org/schemas/" />
+          <option value="http://embedded.link.de" />
+          <option value="http://iam.also.here" />
           <option value="http://java.sun.com/" />
           <option value="http://javafx.com/fxml" />
           <option value="http://javafx.com/javafx/" />
@@ -19,6 +22,7 @@
           <option value="http://primefaces.org/ui" />
           <option value="http://schema.cloudfoundry.org/spring/" />
           <option value="http://schemas.xmlsoap.org/" />
+          <option value="http://test.comment.link" />
           <option value="http://tiles.apache.org/" />
           <option value="http://www.ibm.com/webservices/xsd" />
           <option value="http://www.jboss.com/xml/ns/" />
