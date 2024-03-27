@@ -15,9 +15,9 @@ pub enum DocxExtractionError {
     ZipError(#[from] zip::result::ZipError),
 }
 
-/// Extracts all links from a given docx-file
+/// Extracts all links from a given ooxml-file
 ///
-/// Tries to filter out urls related to docx-functionalities, but might be a bit too aggressive at times
+/// Tries to filter out urls related to ooxml-functionalities, but might be a bit too aggressive at times
 /// if there are links missing from the output, use [`extract_links_unfiltered`]
 pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, DocxExtractionError> {
     let cur = Cursor::new(bytes);
@@ -38,9 +38,9 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, DocxExtractionError> {
     Ok(links)
 }
 
-/// Extracts all links from a given docx file.
+/// Extracts all links from a given ooxml file.
 ///
-/// To avoid getting urls related to the docx-functionalities use [`extract_links`] instead.
+/// To avoid getting urls related to the ooxml-functionalities use [`extract_links`] instead.
 pub fn extract_links_unfiltered(bytes: &[u8]) -> Result<Vec<String>, DocxExtractionError> {
     let cur = Cursor::new(bytes);
     let mut archive = zip::ZipArchive::new(cur)?;
@@ -81,7 +81,7 @@ fn extract_links_from_xml_file(data: impl Read, collector: &mut Vec<String>) -> 
     for e in parser {
         let event = e?;
         match event {
-            XmlEvent::Characters(str) => {raw_text += &str}
+            XmlEvent::Characters(str) => {raw_text += &str; raw_text += " "} // TODO: can probably improve accuracy by only inserting the space for xlsx-files
             XmlEvent::Whitespace(str) => {raw_text += &str}
             _ => {}
         }
@@ -95,14 +95,37 @@ fn extract_links_from_xml_file(data: impl Read, collector: &mut Vec<String>) -> 
 mod tests {
     use super::*;
     use std::include_bytes;
+    use crate::link_extractor::{unique_and_sort};
 
     const TEST_DOCX: &[u8] = include_bytes!("../../../assets/examples/docx/demo.docx");
+    const TEST_PPTX: &[u8] = include_bytes!("../../../assets/examples/pptx/samplepptx.pptx");
+    const TEST_XLSX: &[u8] = include_bytes!("../../../assets/examples/xlsx/sample2.xlsx");
 
     #[test]
-    pub fn extraction_test() {
-        let mut links = extract_links(TEST_DOCX).unwrap();
-        links.sort();
-        assert_eq!(links, vec!["http://calibre-ebook.com/download", "http://embedded.link.de/", "http://iam.also.here", "http://test.comment.link", "https://music.youtube.com/watch?v=fsJ2QVjzwtQ&si=S4UQH23jwXIiZdad"]);
+    pub fn docx_extraction_test() {
+        let links = extract_links(TEST_DOCX).unwrap();
+        assert_eq!(
+            unique_and_sort(links.as_slice()),
+            vec!["http://calibre-ebook.com/download", "http://embedded.link.de/", "http://iam.also.here", "http://test.comment.link", "https://music.youtube.com/watch?v=fsJ2QVjzwtQ&si=S4UQH23jwXIiZdad"]);
+    }
+
+    #[test]
+    pub fn powerpoint_extraction_test() {
+        let links = extract_links(TEST_PPTX).unwrap();
+        assert_eq!(
+            unique_and_sort(links.as_slice()),
+            vec!["http://hyperlink.test.de/", "http://test.link.de/", "http://wurst.salat.de"]
+        );
+    }
+
+    #[test]
+    pub fn excel_extraction_test() {
+        let links = extract_links(TEST_XLSX).unwrap();
+
+        assert_eq!(
+            unique_and_sort(links.as_slice()),
+            vec!["http://xlsx.test.fail/", "https://antother.test/"]
+        );
     }
 
     #[test]

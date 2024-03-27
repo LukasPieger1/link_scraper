@@ -27,5 +27,5 @@ regex_extraction = ["dep:regex"]
 pdf = ["dep:mupdf"]
 websites = ["dep:reqwest", "dep:http"]
 xml = []
-docx = ["dep:xml-rs", "dep:zip"]
+ooxml = ["dep:xml-rs", "dep:zip"]
 
