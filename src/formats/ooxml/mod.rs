@@ -6,7 +6,7 @@ use xml::reader::XmlEvent;
 use crate::link_extractor::find_links;
 
 #[derive(Error, Debug)]
-pub enum DocxExtractionError {
+pub enum OoxmlExtractionError {
     #[error(transparent)]
     IoError(#[from] std::io::Error),
     #[error(transparent)]
@@ -19,7 +19,7 @@ pub enum DocxExtractionError {
 ///
 /// Tries to filter out urls related to ooxml-functionalities, but might be a bit too aggressive at times
 /// if there are links missing from the output, use [`extract_links_unfiltered`]
-pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, DocxExtractionError> {
+pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, OoxmlExtractionError> {
     let cur = Cursor::new(bytes);
     let mut archive = zip::ZipArchive::new(cur)?;
 
@@ -41,12 +41,12 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, DocxExtractionError> {
 /// Extracts all links from a given ooxml file.
 ///
 /// To avoid getting urls related to ooxml-functionalities use [`extract_links`] instead.
-pub fn extract_links_unfiltered(bytes: &[u8]) -> Result<Vec<String>, DocxExtractionError> {
+pub fn extract_links_unfiltered(bytes: &[u8]) -> Result<Vec<String>, OoxmlExtractionError> {
     crate::formats::compressed_formats_common::extract_links_unfiltered(bytes)
 }
 
 /// Extracts links from given .rels file
-fn extract_links_from_rels_file(data: impl Read, collector: &mut Vec<String>) -> Result<(), DocxExtractionError> {
+fn extract_links_from_rels_file(data: impl Read, collector: &mut Vec<String>) -> Result<(), OoxmlExtractionError> {
     let parser = EventReader::new(data);
     for e in parser {
         let event = e?;
@@ -64,7 +64,7 @@ fn extract_links_from_rels_file(data: impl Read, collector: &mut Vec<String>) ->
 ///
 /// All tags and tag-attributes are omitted to filter out functional urls.
 /// This might be too aggressive in some cases though
-fn extract_links_from_xml_file(data: impl Read, collector: &mut Vec<String>) -> Result<(), DocxExtractionError>{
+fn extract_links_from_xml_file(data: impl Read, collector: &mut Vec<String>) -> Result<(), OoxmlExtractionError>{
     let parser = EventReader::new(data);
     for e in parser {
         let event = e?;

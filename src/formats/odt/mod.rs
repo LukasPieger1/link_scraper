@@ -3,7 +3,7 @@ use itertools::Itertools;
 use thiserror::Error;
 use xml::EventReader;
 use xml::reader::XmlEvent;
-use crate::formats::ooxml::DocxExtractionError;
+use crate::formats::ooxml::OoxmlExtractionError;
 use crate::link_extractor::find_links;
 
 #[derive(Error, Debug)]
@@ -40,7 +40,7 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, OdtExtractionError> {
 /// Extracts all links from a given odt file.
 ///
 /// To avoid getting urls related to odt-functionalities use [`crate::formats::ooxml::extract_links`] instead.
-pub fn extract_links_unfiltered(bytes: &[u8]) -> Result<Vec<String>, DocxExtractionError> {
+pub fn extract_links_unfiltered(bytes: &[u8]) -> Result<Vec<String>, OoxmlExtractionError> {
     crate::formats::compressed_formats_common::extract_links_unfiltered(bytes)
 }
 
