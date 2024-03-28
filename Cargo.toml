@@ -20,10 +20,10 @@ mupdf = { version = "0.4.2", optional = true }
 zip = { version = "0.6.6", optional = true }
 xml-rs = { version = "0.8.19", optional = true }
 rtf-parser = { version = "0.2.0", optional = true }
-infer = "0.15.0"
+infer = { version = "0.15.0", optional = true }
 
 [features]
-default = ["pdf", "link_extraction"]
+default = ["generic_file", "link_extraction"]
 link_extraction = ["dep:linkify"]
 regex_extraction = ["dep:regex"]
 pdf = ["dep:mupdf"]
@@ -32,4 +32,5 @@ raw_text = []
 ooxml = ["dep:xml-rs", "dep:zip"]
 odt = ["dep:xml-rs", "dep:zip"]
 rtf = ["dep:rtf-parser"]
+generic_file = ["dep:infer"]
 
