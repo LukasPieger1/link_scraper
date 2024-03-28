@@ -6,7 +6,7 @@ use xml::reader::XmlEvent;
 use crate::link_extractor::find_links;
 
 #[derive(Error, Debug)]
-pub enum OdtExtractionError {
+pub enum OdfExtractionError {
     #[error(transparent)]
     IoError(#[from] std::io::Error),
     #[error(transparent)]
@@ -19,7 +19,7 @@ pub enum OdtExtractionError {
 ///
 /// Tries to filter out urls related to ooxml-functionalities, but might be a bit too aggressive at times
 /// if there are links missing from the output, use [`extract_links_unfiltered`]
-pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, OdtExtractionError> {
+pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, OdfExtractionError> {
     let cur = Cursor::new(bytes);
     let mut archive = zip::ZipArchive::new(cur)?;
 
@@ -39,19 +39,19 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, OdtExtractionError> {
     Ok(links)
 }
 
-/// Extracts all links from a given odt file.
+/// Extracts all links from a given odf file.
 ///
-/// To avoid getting urls related to odt-functionalities use [`crate::formats::ooxml::extract_links`] instead.
-pub fn extract_links_unfiltered(bytes: &[u8]) -> Result<Vec<String>, OdtExtractionError> {
+/// To avoid getting urls related to odf-functionalities use [`crate::formats::ooxml::extract_links`] instead.
+pub fn extract_links_unfiltered(bytes: &[u8]) -> Result<Vec<String>, OdfExtractionError> {
     crate::formats::compressed_formats_common::extract_links_unfiltered(bytes)
-        .map_err(|e| OdtExtractionError::from(e))
+        .map_err(|e| OdfExtractionError::from(e))
 }
 
 /// Extracts links from given .xml file-text
 ///
 /// All tags and tag-attributes are omitted to filter out functional urls.
 /// This might be too aggressive in some cases though
-fn extract_links_from_xml_file(data: impl Read, collector: &mut Vec<String>) -> Result<(), OdtExtractionError> {
+fn extract_links_from_xml_file(data: impl Read, collector: &mut Vec<String>) -> Result<(), OdfExtractionError> {
     let parser = EventReader::new(data);
     for e in parser {
         let event = e?;
@@ -61,9 +61,7 @@ fn extract_links_from_xml_file(data: impl Read, collector: &mut Vec<String>) -> 
                     attributes.iter()
                         .find(|attr| attr.name.local_name == "href")
                         .map(|href| href.value.to_string())
-                } else {
-                    None
-                }
+                } else { None }
             XmlEvent::Characters(str) => Some(str),
             XmlEvent::Whitespace(str) => Some(str),
             _ => None
