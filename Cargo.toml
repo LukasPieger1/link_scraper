@@ -31,7 +31,7 @@ pdf = ["dep:mupdf"]
 websites = ["dep:reqwest", "dep:http"]
 text_file = []
 ooxml = ["dep:xml-rs", "dep:zip"]
-odt = ["dep:xml-rs", "dep:zip"]
+odf = ["dep:xml-rs", "dep:zip"]
 rtf = ["dep:rtf-parser"]
 generic_file = ["dep:infer"]
 
