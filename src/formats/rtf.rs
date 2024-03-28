@@ -32,7 +32,7 @@ mod tests {
     use crate::link_extractor::unique_and_sort;
     use super::*;
 
-    const TEST_RTF: &[u8] = include_bytes!("../../assets/examples/rtf/file-sample_1MB.rtf");
+    const TEST_RTF: &[u8] = include_bytes!("../../test_files/rtf/test.rtf");
     #[test]
     fn extract_links_from_rtf() {
         let links = extract_links(TEST_RTF).unwrap();

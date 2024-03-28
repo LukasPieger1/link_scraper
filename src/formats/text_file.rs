@@ -19,7 +19,7 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, TextFileExtractionErro
 mod tests {
     use super::*;
 
-    const TEST_XML: &[u8] = include_bytes!("../../assets/examples/xml/test.xml");
+    const TEST_XML: &[u8] = include_bytes!("../../test_files/xml/test.xml");
     #[test]
     fn get_some_website() {
         let links = extract_links(TEST_XML).unwrap();

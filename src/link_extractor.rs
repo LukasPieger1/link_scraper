@@ -3,6 +3,8 @@ use itertools::{Itertools};
 use lazy_static::lazy_static;
 use linkify::LinkFinder;
 use linkify::LinkKind::{Url};
+#[cfg(feature = "generic_file")]
+pub use crate::generic_link_extractor::extract_links;
 
 lazy_static! {
     static ref FINDER: LinkFinder = LinkFinder::new();

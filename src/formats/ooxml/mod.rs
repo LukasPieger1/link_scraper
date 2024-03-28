@@ -43,6 +43,7 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, OoxmlExtractionError> 
 /// To avoid getting urls related to ooxml-functionalities use [`extract_links`] instead.
 pub fn extract_links_unfiltered(bytes: &[u8]) -> Result<Vec<String>, OoxmlExtractionError> {
     crate::formats::compressed_formats_common::extract_links_unfiltered(bytes)
+        .map_err(|e| OoxmlExtractionError::from(e))
 }
 
 /// Extracts links from given .rels file
@@ -87,9 +88,9 @@ mod tests {
     use std::include_bytes;
     use crate::link_extractor::{unique_and_sort};
 
-    const TEST_DOCX: &[u8] = include_bytes!("../../../assets/examples/docx/demo.docx");
-    const TEST_PPTX: &[u8] = include_bytes!("../../../assets/examples/pptx/samplepptx.pptx");
-    const TEST_XLSX: &[u8] = include_bytes!("../../../assets/examples/xlsx/sample2.xlsx");
+    const TEST_DOCX: &[u8] = include_bytes!("../../../test_files/docx/test.docx");
+    const TEST_PPTX: &[u8] = include_bytes!("../../../test_files/pptx/test.pptx");
+    const TEST_XLSX: &[u8] = include_bytes!("../../../test_files/xlsx/test.xlsx");
 
     #[test]
     pub fn docx_extraction_test() {

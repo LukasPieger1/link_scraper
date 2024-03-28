@@ -1,10 +1,5 @@
 use std::io::read_to_string;
 use thiserror::Error;
-use crate::formats::odt::OdtExtractionError;
-use crate::formats::ooxml::OoxmlExtractionError;
-use crate::formats::pdf::PdfExtractionError;
-use crate::formats::raw_text::TextFileExtractionError;
-use crate::formats::rtf::RtfExtractionError;
 use crate::link_extractor::find_links;
 
 #[derive(Error, Debug)]
@@ -14,23 +9,23 @@ pub enum LinkExtractionError {
 
     #[cfg(feature = "ooxml")]
     #[error(transparent)]
-    OoxmlExtractionError(#[from] OoxmlExtractionError),
+    OoxmlExtractionError(#[from] crate::formats::ooxml::OoxmlExtractionError),
 
     #[cfg(feature = "odt")]
     #[error(transparent)]
-    OdtExtractionError(#[from] OdtExtractionError),
+    OdtExtractionError(#[from] crate::formats::odt::OdtExtractionError),
 
     #[cfg(feature = "pdf")]
     #[error(transparent)]
-    PdfExtractionError(#[from] PdfExtractionError),
+    PdfExtractionError(#[from] crate::formats::pdf::PdfExtractionError),
 
     #[cfg(feature = "rtf")]
     #[error(transparent)]
-    RtfExtractionError(#[from] RtfExtractionError),
+    RtfExtractionError(#[from] crate::formats::rtf::RtfExtractionError),
 
-    #[cfg(feature = "rtf")]
+    #[cfg(feature = "text_file")]
     #[error(transparent)]
-    TextFileExtractionError(#[from] TextFileExtractionError),
+    TextFileExtractionError(#[from] crate::formats::text_file::TextFileExtractionError),
 
     #[error("Required feature is not enabled")]
     FeatureNotEnabledError(String),
@@ -57,8 +52,13 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, LinkExtractionError>{
         "application/zip" => try_zip(bytes),
         "application/pdf" => Ok(try_pdf(bytes)?),
         "application/rtf" => Ok(try_rtf(bytes)?),
-        "application/json" => Ok(try_text_file(bytes)?),
+
+        "text/plain" => Ok(try_text_file(bytes)?),
         "text/xml" => Ok(try_text_file(bytes)?),
+        "text/csv" => Ok(try_text_file(bytes)?),
+        "text/html" => Ok(try_text_file(bytes)?),
+        "text/css" => Ok(try_text_file(bytes)?),
+        "application/json" => Ok(try_text_file(bytes)?),
         _ => Err(LinkExtractionError::FileTypeNotImplemented(file_type.mime_type().to_string()))
     }
 }
@@ -78,35 +78,35 @@ fn try_zip(bytes: &[u8]) -> Result<Vec<String>, LinkExtractionError> {
     return ret;
 }
 
-fn try_text_file(bytes: &[u8]) -> Result<Vec<String>, TextFileExtractionError> {
-    #[cfg(feature = "raw_text")]
-    return Ok(crate::formats::raw_text::extract_links(bytes)?);
-    #[cfg(not(feature = "raw_text"))]
+fn try_text_file(bytes: &[u8]) -> Result<Vec<String>, LinkExtractionError> {
+    #[cfg(feature = "text_file")]
+    return Ok(crate::formats::text_file::extract_links(bytes)?);
+    #[cfg(not(feature = "text_file"))]
     return Err(LinkExtractionError::FeatureNotEnabledError("text-document detected, but cannot parse it because `text_file`-feature is not enabled. Please enable it in your dependencies.".to_string()))
 }
 
-fn try_odt(bytes: &[u8]) -> Result<Vec<String>, OdtExtractionError> {
+fn try_odt(bytes: &[u8]) -> Result<Vec<String>, LinkExtractionError> {
     #[cfg(feature = "odt")]
     return Ok(crate::formats::odt::extract_links(bytes)?);
     #[cfg(not(feature = "odt"))]
     return Err(LinkExtractionError::FeatureNotEnabledError("OpenOffice document detected, but cannot parse it because `odt`-feature is not enabled. Please enable it in your dependencies.".to_string()))
 }
 
-fn try_rtf(bytes: &[u8]) -> Result<Vec<String>, RtfExtractionError> {
+fn try_rtf(bytes: &[u8]) -> Result<Vec<String>, LinkExtractionError> {
     #[cfg(feature = "rtf")]
     return Ok(crate::formats::rtf::extract_links(bytes)?);
     #[cfg(not(feature = "rtf"))]
     return Err(LinkExtractionError::FeatureNotEnabledError(".rtf-document detected, but cannot parse it because `rtf`-feature is not enabled. Please enable it in your dependencies.".to_string()))
 }
 
-fn try_pdf(bytes: &[u8]) -> Result<Vec<String>, PdfExtractionError> {
+fn try_pdf(bytes: &[u8]) -> Result<Vec<String>, LinkExtractionError> {
     #[cfg(feature = "pdf")]
     return Ok(crate::formats::pdf::extract_links(bytes)?);
     #[cfg(not(feature = "pdf"))]
     return Err(LinkExtractionError::FeatureNotEnabledError("PDF-document detected, but cannot parse it because `pdf`-feature is not enabled. Please enable it in your dependencies.".to_string()))
 }
 
-fn try_ooxml(bytes: &[u8]) -> Result<Vec<String>, OoxmlExtractionError> {
+fn try_ooxml(bytes: &[u8]) -> Result<Vec<String>, LinkExtractionError> {
     #[cfg(feature = "ooxml")]
     return Ok(crate::formats::ooxml::extract_links(bytes)?);
     #[cfg(not(feature = "ooxml"))]
@@ -118,24 +118,22 @@ mod tests {
     use super::*;
     use std::include_bytes;
 
-    const TEST_DOCX: &[u8] = include_bytes!("../assets/examples/docx/demo.docx");
-    const TEST_PPTX: &[u8] = include_bytes!("../assets/examples/pptx/samplepptx.pptx");
-    const TEST_XLSX: &[u8] = include_bytes!("../assets/examples/xlsx/sample2.xlsx");
-    const TEST_ODT: &[u8] = include_bytes!("../assets/examples/odt/file-sample_1MB.odt");
-    const TEST_PDF: &[u8] = include_bytes!("../assets/examples/pdf/combined_test.pdf");
-    const TEST_PDF2: &[u8] = include_bytes!("../assets/examples/pdf/PDF32000_2008.pdf");
-    const TEST_RTF: &[u8] = include_bytes!("../assets/examples/rtf/file-sample_1MB.rtf");
-    const TEST_XML: &[u8] = include_bytes!("../assets/examples/xml/test.xml");
+    const TEST_DOCX: &[u8] = include_bytes!("../test_files/docx/test.docx");
+    const TEST_PPTX: &[u8] = include_bytes!("../test_files/pptx/test.pptx");
+    const TEST_XLSX: &[u8] = include_bytes!("../test_files/xlsx/test.xlsx");
+    const TEST_ODT: &[u8] = include_bytes!("../test_files/odt/test.odt");
+    const TEST_PDF: &[u8] = include_bytes!("../test_files/pdf/test.pdf");
+    const TEST_RTF: &[u8] = include_bytes!("../test_files/rtf/test.rtf");
+    const TEST_XML: &[u8] = include_bytes!("../test_files/xml/test.xml");
 
     #[test]
     fn generic_extraction_test() {
-        println!("{:?}", extract_links(b"http://test.com").unwrap());
+        println!("{:?}", extract_links(b"http://test.com/").unwrap());
         println!("{:?}", extract_links(TEST_DOCX).unwrap());
         println!("{:?}", extract_links(TEST_PPTX).unwrap());
         println!("{:?}", extract_links(TEST_XLSX).unwrap());
         println!("{:?}", extract_links(TEST_ODT).unwrap());
         println!("{:?}", extract_links(TEST_PDF).unwrap());
-        println!("{:?}", extract_links(TEST_PDF2).unwrap());
         println!("{:?}", extract_links(TEST_RTF).unwrap());
         println!("{:?}", extract_links(TEST_XML).unwrap());
     }
