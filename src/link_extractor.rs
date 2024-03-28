@@ -8,7 +8,7 @@ lazy_static! {
     static ref FINDER: LinkFinder = LinkFinder::new();
 }
 
-//TODO further formats: doc, odf
+//TODO further formats: doc
 
 /// Finds all URLs in a given string
 /// # Example

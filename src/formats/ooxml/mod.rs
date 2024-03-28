@@ -40,20 +40,9 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, DocxExtractionError> {
 
 /// Extracts all links from a given ooxml file.
 ///
-/// To avoid getting urls related to the ooxml-functionalities use [`extract_links`] instead.
+/// To avoid getting urls related to ooxml-functionalities use [`extract_links`] instead.
 pub fn extract_links_unfiltered(bytes: &[u8]) -> Result<Vec<String>, DocxExtractionError> {
-    let cur = Cursor::new(bytes);
-    let mut archive = zip::ZipArchive::new(cur)?;
-
-    let mut links: Vec<String> = vec![];
-    for file_name in archive.file_names().map(|name| name.to_owned()).collect_vec() {
-        let mut file_content = String::new();
-        if archive.by_name(&file_name)?.read_to_string(&mut file_content).is_err() {continue}
-
-        find_links(&file_content).iter().for_each(|link| links.push(link.to_string()))
-    }
-
-    Ok(links)
+    crate::formats::compressed_formats_common::extract_links_unfiltered(bytes)
 }
 
 /// Extracts links from given .rels file
@@ -77,16 +66,17 @@ fn extract_links_from_rels_file(data: impl Read, collector: &mut Vec<String>) ->
 /// This might be too aggressive in some cases though
 fn extract_links_from_xml_file(data: impl Read, collector: &mut Vec<String>) -> Result<(), DocxExtractionError>{
     let parser = EventReader::new(data);
-    let mut raw_text = String::new();
     for e in parser {
         let event = e?;
-        match event {
-            XmlEvent::Characters(str) => {raw_text += &str; raw_text += " "} // TODO: can probably improve accuracy by only inserting the space for xlsx-files
-            XmlEvent::Whitespace(str) => {raw_text += &str}
-            _ => {}
+        let raw_text = match event {
+            XmlEvent::Characters(str) => Some(str),
+            XmlEvent::Whitespace(str) => Some(str),
+            _ => None
+        };
+        if let Some(text) = raw_text {
+            find_links(&text).iter().for_each(|link| collector.push(link.to_string()));
         }
     }
-    find_links(&raw_text).iter().for_each(|link| collector.push(link.to_string()));
     Ok(())
 }
 

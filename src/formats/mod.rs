@@ -8,3 +8,7 @@ pub mod raw_text;
 pub mod ooxml;
 #[cfg(feature = "rtf")]
 pub mod rtf;
+#[cfg(feature = "odt")]
+pub mod odt;
+#[cfg(any(feature = "odt", feature = "ooxml"))]
+mod compressed_formats_common;
