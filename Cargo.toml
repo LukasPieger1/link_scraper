@@ -29,5 +29,6 @@ pdf = ["dep:mupdf"]
 websites = ["dep:reqwest", "dep:http"]
 raw_text = []
 ooxml = ["dep:xml-rs", "dep:zip"]
+odt = ["dep:xml-rs", "dep:zip"]
 rtf = ["dep:rtf-parser"]
 
