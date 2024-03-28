@@ -49,6 +49,9 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, LinkExtractionError>{
     match file_type.mime_type() {
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" => Ok(try_ooxml(bytes)?),
         "application/vnd.oasis.opendocument.text" => Ok(try_odt(bytes)?),
+        "application/vnd.oasis.opendocument.spreadsheet" => Ok(try_odt(bytes)?),
+        "application/vnd.oasis.opendocument.template" => Ok(try_odt(bytes)?),
+        "application/vnd.oasis.opendocument.presentation" => Ok(try_odt(bytes)?),
         "application/zip" => try_zip(bytes),
         "application/pdf" => Ok(try_pdf(bytes)?),
         "application/rtf" => Ok(try_rtf(bytes)?),
@@ -122,6 +125,9 @@ mod tests {
     const TEST_PPTX: &[u8] = include_bytes!("../test_files/pptx/test.pptx");
     const TEST_XLSX: &[u8] = include_bytes!("../test_files/xlsx/test.xlsx");
     const TEST_ODT: &[u8] = include_bytes!("../test_files/odt/test.odt");
+    const TEST_ODS: &[u8] = include_bytes!("../test_files/ods/test.ods");
+    const TEST_OTT: &[u8] = include_bytes!("../test_files/ott/test.ott");
+    const TEST_ODP: &[u8] = include_bytes!("../test_files/odp/test.odp");
     const TEST_PDF: &[u8] = include_bytes!("../test_files/pdf/test.pdf");
     const TEST_RTF: &[u8] = include_bytes!("../test_files/rtf/test.rtf");
     const TEST_XML: &[u8] = include_bytes!("../test_files/xml/test.xml");
@@ -133,6 +139,9 @@ mod tests {
         println!("{:?}", extract_links(TEST_PPTX).unwrap());
         println!("{:?}", extract_links(TEST_XLSX).unwrap());
         println!("{:?}", extract_links(TEST_ODT).unwrap());
+        println!("{:?}", extract_links(TEST_ODS).unwrap());
+        println!("{:?}", extract_links(TEST_OTT).unwrap());
+        println!("{:?}", extract_links(TEST_ODP).unwrap());
         println!("{:?}", extract_links(TEST_PDF).unwrap());
         println!("{:?}", extract_links(TEST_RTF).unwrap());
         println!("{:?}", extract_links(TEST_XML).unwrap());

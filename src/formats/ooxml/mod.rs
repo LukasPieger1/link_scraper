@@ -27,6 +27,9 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, OoxmlExtractionError> 
     for file_name in archive.file_names().map(|name| name.to_owned()).collect_vec() {
         let mut file_content = vec![];
         archive.by_name(&file_name)?.read_to_end(&mut file_content)?;
+        if file_content.is_empty() {
+            continue;
+        }
 
         if file_name.ends_with(".rels") {
             extract_links_from_rels_file(file_content.as_slice(), &mut links)?
