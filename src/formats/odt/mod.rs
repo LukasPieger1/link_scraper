@@ -3,7 +3,6 @@ use itertools::Itertools;
 use thiserror::Error;
 use xml::EventReader;
 use xml::reader::XmlEvent;
-use crate::formats::ooxml::OoxmlExtractionError;
 use crate::link_extractor::find_links;
 
 #[derive(Error, Debug)]
@@ -40,8 +39,9 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, OdtExtractionError> {
 /// Extracts all links from a given odt file.
 ///
 /// To avoid getting urls related to odt-functionalities use [`crate::formats::ooxml::extract_links`] instead.
-pub fn extract_links_unfiltered(bytes: &[u8]) -> Result<Vec<String>, OoxmlExtractionError> {
+pub fn extract_links_unfiltered(bytes: &[u8]) -> Result<Vec<String>, OdtExtractionError> {
     crate::formats::compressed_formats_common::extract_links_unfiltered(bytes)
+        .map_err(|e| OdtExtractionError::from(e))
 }
 
 /// Extracts links from given .xml file-text
@@ -53,7 +53,7 @@ fn extract_links_from_xml_file(data: impl Read, collector: &mut Vec<String>) -> 
     for e in parser {
         let event = e?;
         let raw_text = match event {
-            XmlEvent::StartElement {name, attributes, ..} => 
+            XmlEvent::StartElement {name, attributes, ..} =>
                 if name.local_name == "a" {
                     attributes.iter()
                         .find(|attr| attr.name.local_name == "href")
@@ -78,7 +78,7 @@ mod tests {
     use std::include_bytes;
     use crate::link_extractor::{unique_and_sort};
 
-    const TEST_ODT: &[u8] = include_bytes!("../../../assets/examples/odt/file-sample_1MB.odt");
+    const TEST_ODT: &[u8] = include_bytes!("../../../test_files/odt/test.odt");
 
     #[test]
     pub fn docx_extraction_test() {
