@@ -91,12 +91,20 @@ mod tests {
 
     const NOT_A_PDF: &[u8] = include_bytes!("../../../test_files/docx/test.docx");
     const BIG_PDF: &[u8] = include_bytes!("../../../test_files/pdf/test.pdf");
+    const PDFA_EXAMPLE: &[u8] = include_bytes!("../../../test_files/pdf/pdfa-example.pdf");
     const BIG_PDF_ENCRYPTED: &[u8] = include_bytes!("../../../test_files/pdf/test_protected.pdf"); // pass: asdfasdf
 
     #[test]
     fn extract_lots_of_links_from_pdf() {
         let links = extract_links(BIG_PDF).unwrap();
         assert_eq!(38, links.len())
+    }
+
+    #[test]
+    fn extract_links_from_pdfa() {
+        let links = extract_links(PDFA_EXAMPLE).unwrap();
+        println!("{:?}", links);
+        assert_eq!(links, vec!["http://www.tcpdf.org", "http://sourceforge.net/donate/index.php?group_id=128076"])
     }
 
     #[test]
