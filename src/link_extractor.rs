@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 use std::hash::Hash;
 use itertools::{Itertools};
 use lazy_static::lazy_static;
@@ -10,6 +11,13 @@ lazy_static! {
     static ref FINDER: LinkFinder = LinkFinder::new();
 }
 
+
+
+impl Display for Link {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.href)
+    }
+}
 /// Finds all URLs in a given string
 /// # Example
 /// ```

@@ -15,6 +15,12 @@ pub enum OoxmlExtractionError {
     ZipError(#[from] zip::result::ZipError),
 }
 
+pub struct OoxmlLocation {
+    file: String,
+    line: u64,
+    pos: u64
+}
+
 /// Extracts all links from a given ooxml-file
 ///
 /// Tries to filter out urls related to ooxml-functionalities, but might be a bit too aggressive at times
