@@ -8,11 +8,6 @@ pub enum TextFileExtractionError {
     IoError(#[from] std::io::Error),
 }
 
-pub struct TxtLocation {
-    line: u64,
-    pos: u64
-}
-
 pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, TextFileExtractionError> {
     let mut buf_reader = BufReader::new(bytes);
     let mut contents = String::new();
