@@ -43,7 +43,7 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, OoxmlExtractionError> 
             extract_links_from_xml_file(file_content.as_slice(), &mut links)?
         }
     }
-
+    
     Ok(links)
 }
 
