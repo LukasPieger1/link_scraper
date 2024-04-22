@@ -1,9 +1,10 @@
-use std::fmt::{Display, Formatter};
 use std::hash::Hash;
-use itertools::{Itertools};
+
+use itertools::Itertools;
 use lazy_static::lazy_static;
 use linkify::LinkFinder;
-use linkify::LinkKind::{Url};
+use linkify::LinkKind::Url;
+
 #[cfg(feature = "generic_file")]
 pub use crate::generic_link_extractor::extract_links;
 

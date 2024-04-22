@@ -97,9 +97,9 @@ mod tests {
     use std::include_bytes;
     use crate::link_extractor::{unique_and_sort};
 
-    const TEST_DOCX: &[u8] = include_bytes!("../../../test_files/docx/test.docx");
-    const TEST_PPTX: &[u8] = include_bytes!("../../../test_files/pptx/test.pptx");
-    const TEST_XLSX: &[u8] = include_bytes!("../../../test_files/xlsx/test.xlsx");
+    const TEST_DOCX: &[u8] = include_bytes!("../../test_files/docx/test.docx");
+    const TEST_PPTX: &[u8] = include_bytes!("../../test_files/pptx/test.pptx");
+    const TEST_XLSX: &[u8] = include_bytes!("../../test_files/xlsx/test.xlsx");
 
     #[test]
     pub fn docx_extraction_test() {

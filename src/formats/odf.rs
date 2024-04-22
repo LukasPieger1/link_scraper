@@ -79,7 +79,7 @@ mod tests {
     use std::include_bytes;
     use crate::link_extractor::{unique_and_sort};
 
-    const TEST_ODT: &[u8] = include_bytes!("../../../test_files/odt/test.odt");
+    const TEST_ODT: &[u8] = include_bytes!("../../test_files/odt/test.odt");
 
     #[test]
     pub fn docx_extraction_test() {
