@@ -89,10 +89,10 @@ mod tests {
     use super::*;
     use std::include_bytes;
 
-    const NOT_A_PDF: &[u8] = include_bytes!("../../../test_files/docx/test.docx");
-    const BIG_PDF: &[u8] = include_bytes!("../../../test_files/pdf/test.pdf");
-    const PDFA_EXAMPLE: &[u8] = include_bytes!("../../../test_files/pdf/pdfa-example.pdf");
-    const BIG_PDF_ENCRYPTED: &[u8] = include_bytes!("../../../test_files/pdf/test_protected.pdf"); // pass: asdfasdf
+    const NOT_A_PDF: &[u8] = include_bytes!("../../test_files/docx/test.docx");
+    const BIG_PDF: &[u8] = include_bytes!("../../test_files/pdf/test.pdf");
+    const PDFA_EXAMPLE: &[u8] = include_bytes!("../../test_files/pdf/pdfa-example.pdf");
+    const BIG_PDF_ENCRYPTED: &[u8] = include_bytes!("../../test_files/pdf/test_protected.pdf"); // pass: asdfasdf
 
     #[test]
     fn extract_lots_of_links_from_pdf() {

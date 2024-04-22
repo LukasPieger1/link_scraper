@@ -1,0 +1,10 @@
+<root xmlns:xlink="http://www.w3.org/1999/xlink">
+    <child3 xlink:type="extended">
+        <child4 xlink:type="arc"/>
+        <child5 xlink:type="arc" xlink:from="source" xlink:to="destination" xlink:show="new" xlink:actuate="onLoad" xlink:title="Human readable title"/>
+        <child6 xlink:type="locator" xlink:href="http://www.xbrlapi.org/" xlink:role="http://www.xbrlapi.org/role/" xlink:title="Human readable title">
+            <child7 xlink:type="arc" xlink:from="source" xlink:to="destination" xlink:show="new" xlink:actuate="onLoad" xlink:title="Human readable title"/>
+        </child6>
+        <child8 xlink:type="arc" xlink:from="the source" xlink:to="destination" xlink:show="new" xlink:actuate="onLoad" xlink:title="Human readable title"/>
+    </child3>
+</root>
