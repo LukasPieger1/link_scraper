@@ -5,11 +5,10 @@ use thiserror::Error;
 use xml::attribute::OwnedAttribute;
 use xml::common::{Position, TextPosition};
 use xml::EventReader;
-use xml::name::OwnedName;
-use xml::namespace::Namespace;
 use xml::reader::XmlEvent;
-use crate::formats::xlink::elements::{XlinkElement, XlinkExtendedElement, XlinkSimpleElement};
-use crate::formats::xlink::XLinkFormatError::{ArcOutsideOfExtendedError, ExtendedInsideOfExtendedError, LocatorOutsideOfExtendedError, ResourceOutsideOfExtendedError, SimpleInsideOfExtendedError};
+use crate::formats::xml::xlink::elements::{XlinkElement, XlinkExtendedElement, XlinkSimpleElement};
+use crate::formats::xml::xlink::XLinkFormatError::{ArcOutsideOfExtendedError, ExtendedInsideOfExtendedError, LocatorOutsideOfExtendedError, ResourceOutsideOfExtendedError, SimpleInsideOfExtendedError};
+use crate::formats::xml::XmlStartElement;
 use crate::link_extractor::find_links;
 
 #[derive(Error, Debug)]
@@ -30,12 +29,6 @@ pub enum XLinkFormatError {
     ExtendedInsideOfExtendedError,
     #[error(transparent)]
     XmlReaderError(#[from] xml::reader::Error)
-}
-
-pub struct XmlStartElement<'a> {
-    name: &'a OwnedName,
-    attributes: &'a Vec<OwnedAttribute>,
-    _namespace: &'a Namespace
 }
 
 fn get_xlink_attribute_value(key: &str, attributes: &Vec<OwnedAttribute>) -> Option<String> {
@@ -164,7 +157,7 @@ fn from_xlink_simple(xlink_element: XlinkSimpleElement, parser: &EventReader<&[u
 mod tests {
     use super::*;
 
-    const TEST_XLINK: &[u8] = include_bytes!("../../../test_files/xml/xlink_test.xml");
+    const TEST_XLINK: &[u8] = include_bytes!("../../../../test_files/xml/xlink_test.xml");
 
     #[test]
     fn extract_lots_of_links_from_xlink() {

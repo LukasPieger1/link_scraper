@@ -1,4 +1,5 @@
-use crate::formats::xlink::{get_xlink_attribute_value, XLinkFormatError, XmlStartElement};
+use crate::formats::xml::xlink::{get_xlink_attribute_value, XLinkFormatError};
+use crate::formats::xml::XmlStartElement;
 
 #[derive(Debug)]
 enum XLinkType {
