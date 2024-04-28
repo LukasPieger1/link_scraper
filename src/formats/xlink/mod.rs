@@ -55,7 +55,7 @@ pub struct XLinkLink {
 #[derive(Debug, Copy, Clone)]
 pub enum XLinkLinkType {
     Simple,
-    Locator,
+    External,
     Role,
     ArcRole,
 }
@@ -123,7 +123,7 @@ fn from_xlink_extended(xlink_extended_element: XlinkExtendedElement, parser: &mu
                         locator_links.push(XLinkLink {
                             href: element.href,
                             location: parser.position(),
-                            kind: XLinkLinkType::Locator
+                            kind: XLinkLinkType::External
                         });
                         locator_links.append(&mut links_from_option_string(element.role, XLinkLinkType::Role, parser.position()));
                         
