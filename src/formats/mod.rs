@@ -10,7 +10,7 @@ pub mod ooxml;
 pub mod rtf;
 #[cfg(feature = "odf")]
 pub mod odf;
-#[cfg(feature = "xlink")]
-pub mod xlink;
+#[cfg(any(feature = "xml", feature = "xlink"))]
+pub mod xml;
 #[cfg(any(feature = "odf", feature = "ooxml"))]
 mod compressed_formats_common;
