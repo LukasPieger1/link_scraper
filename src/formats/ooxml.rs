@@ -16,9 +16,9 @@ pub enum OoxmlExtractionError {
 }
 
 pub struct OoxmlLocation {
-    file: String,
-    line: u64,
-    pos: u64
+    pub file: String,
+    pub line: u64,
+    pub pos: u64
 }
 
 /// Extracts all links from a given ooxml-file
