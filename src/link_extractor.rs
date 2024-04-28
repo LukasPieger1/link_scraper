@@ -1,16 +1,11 @@
 use std::hash::Hash;
 
 use itertools::Itertools;
-use lazy_static::lazy_static;
 use linkify::LinkFinder;
 use linkify::LinkKind::Url;
 
 #[cfg(feature = "generic_file")]
 pub use crate::generic_link_extractor::extract_links;
-
-lazy_static! {
-    static ref FINDER: LinkFinder = LinkFinder::new();
-}
 
 /// Finds all URLs in a given string
 /// # Example
@@ -20,7 +15,7 @@ lazy_static! {
 /// assert_eq!(urls, vec!["https://www.google.com"])
 /// ```
 pub fn find_links(content: &str) -> Vec<&str> {
-    FINDER.links(content)
+    LinkFinder::new().links(content)
         .filter(|link| link.kind().eq(&Url))
         .map(|link| link.as_str()).collect()
 }
