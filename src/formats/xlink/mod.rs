@@ -67,12 +67,14 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<XLinkLink>, XLinkFormatError> {
     
     let mut parser = EventReader::new(bytes);
     while let Ok(xml_event) = &parser.next() {
-        let mut event_links: Vec<XLinkLink> = match xml_event {
-            XmlEvent::StartElement { name, attributes, namespace } => { from_start_element(XmlStartElement { name, attributes, namespace }, &mut parser)? }
+        match xml_event {
+            XmlEvent::StartElement { name, attributes, namespace } => { 
+                let mut list = from_start_element(XmlStartElement { name, attributes, namespace }, &mut parser)?;
+                collector.append(&mut list)
+            }
             XmlEvent::EndDocument => break,
-            _ => vec![]
-        };
-        collector.append(&mut event_links)
+            _ => {}
+        }
     }
 
     Ok(collector)
