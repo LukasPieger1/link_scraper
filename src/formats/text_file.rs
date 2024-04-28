@@ -9,8 +9,8 @@ pub enum TextFileExtractionError {
 }
 
 pub struct TxtLocation {
-    line: u64,
-    pos: u64
+    pub line: u64,
+    pub pos: u64
 }
 
 pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, TextFileExtractionError> {

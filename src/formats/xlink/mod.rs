@@ -1,4 +1,4 @@
-mod elements;
+pub mod elements;
 
 use itertools::Itertools;
 use thiserror::Error;
@@ -32,10 +32,10 @@ pub enum XLinkFormatError {
     XmlReaderError(#[from] xml::reader::Error)
 }
 
-pub(crate) struct XmlStartElement<'a> {
+pub struct XmlStartElement<'a> {
     name: &'a OwnedName,
     attributes: &'a Vec<OwnedAttribute>,
-    namespace: &'a Namespace
+    _namespace: &'a Namespace
 }
 
 fn get_xlink_attribute_value(key: &str, attributes: &Vec<OwnedAttribute>) -> Option<String> {
@@ -47,9 +47,9 @@ fn get_xlink_attribute_value(key: &str, attributes: &Vec<OwnedAttribute>) -> Opt
 
 #[derive(Debug)]
 pub struct XLinkLink {
-    href: String,
-    location: TextPosition,
-    kind: XLinkLinkType
+    pub href: String,
+    pub location: TextPosition,
+    pub kind: XLinkLinkType
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -69,7 +69,7 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<XLinkLink>, XLinkFormatError> {
     while let Ok(xml_event) = &parser.next() {
         match xml_event {
             XmlEvent::StartElement { name, attributes, namespace } => { 
-                let mut list = from_start_element(XmlStartElement { name, attributes, namespace }, &mut parser)?;
+                let mut list = from_start_element(XmlStartElement { name, attributes, _namespace: namespace }, &mut parser)?;
                 collector.append(&mut list)
             }
             XmlEvent::EndDocument => break,
@@ -113,7 +113,7 @@ fn from_xlink_extended(xlink_extended_element: XlinkExtendedElement, parser: &mu
         let mut links = match xml_event {
             XmlEvent::StartElement { name, attributes, namespace } => {
                 let Some(xlink_element) = 
-                    XlinkElement::try_from_xml_start_element(XmlStartElement{ name, attributes, namespace })?
+                    XlinkElement::try_from_xml_start_element(XmlStartElement{ name, attributes, _namespace: namespace })?
                 else { continue };
                 
                 match xlink_element {

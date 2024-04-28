@@ -26,7 +26,7 @@ impl TryFrom<&str> for XLinkType {
     }
 }
 
-pub(crate) enum XlinkElement<'a> {
+pub enum XlinkElement<'a> {
     Simple(XlinkSimpleElement<'a>),
     Extended(XlinkExtendedElement<'a>),
     Locator(XlinkLocatorElement<'a>),
@@ -36,7 +36,7 @@ pub(crate) enum XlinkElement<'a> {
 }
 
 impl<'a> XlinkElement<'a> {
-    pub(crate) fn try_from_xml_start_element(xml_start_element: XmlStartElement<'a>) -> Result<Option<Self>, XLinkFormatError> {
+    pub fn try_from_xml_start_element(xml_start_element: XmlStartElement<'a>) -> Result<Option<Self>, XLinkFormatError> {
         let xlink_href = get_xlink_attribute_value("href", xml_start_element.attributes);
         let mut xlink_type_option = get_xlink_attribute_value("type", xml_start_element.attributes)
             .map(|type_value| XLinkType::try_from(type_value.as_str()))
@@ -61,7 +61,7 @@ impl<'a> XlinkElement<'a> {
     }
 }
 
-pub(crate) struct XlinkSimpleElement<'a> {
+pub struct XlinkSimpleElement<'a> {
     pub href: Option<String>,
     pub role: Option<String>,
     pub arcrole: Option<String>,
@@ -86,7 +86,7 @@ impl<'a> TryFrom<XmlStartElement<'a>> for XlinkSimpleElement<'a> {
     }
 }
 
-pub(crate) struct XlinkExtendedElement<'a> {
+pub struct XlinkExtendedElement<'a> {
     pub role: Option<String>,
     pub title: Option<String>,
     pub xml: XmlStartElement<'a>
@@ -103,7 +103,7 @@ impl<'a> TryFrom<XmlStartElement<'a>> for XlinkExtendedElement<'a> {
     }
 }
 
-pub(crate) struct XlinkLocatorElement<'a> {
+pub struct XlinkLocatorElement<'a> {
     pub href: String,
     pub role: Option<String>,
     pub title: Option<String>,
@@ -123,7 +123,7 @@ impl<'a> TryFrom<XmlStartElement<'a>> for XlinkLocatorElement<'a> {
     }
 }
 
-pub(crate) struct XlinkArcElement<'a> {
+pub struct XlinkArcElement<'a> {
     pub arcrole: Option<String>,
     pub title: Option<String>,
     pub show: Option<String>,
@@ -148,7 +148,7 @@ impl<'a> TryFrom<XmlStartElement<'a>> for XlinkArcElement<'a> {
     }
 }
 
-pub(crate) struct XlinkResourceElement<'a> {
+pub struct XlinkResourceElement<'a> {
     pub role: Option<String>,
     pub title: Option<String>,
     pub label: Option<String>,
@@ -167,7 +167,7 @@ impl<'a> TryFrom<XmlStartElement<'a>> for XlinkResourceElement<'a> {
     }
 }
 
-pub(crate) struct XlinkTitleElement<'a> {
+pub struct XlinkTitleElement<'a> {
     pub xml: XmlStartElement<'a>
 }
 impl<'a> TryFrom<XmlStartElement<'a>> for XlinkTitleElement<'a> {
