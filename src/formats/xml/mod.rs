@@ -62,6 +62,35 @@ pub fn extract_links_from_href_tags(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlErr
     Ok(collector)
 }
 
+pub fn extract_links(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlError> {
+    let mut collector: Vec<XmlLink> = vec![];
+    
+    let mut parser = EventReader::new(bytes);
+    while let Ok(xml_event) = &parser.next() {
+        match xml_event {
+            XmlEvent::StartDocument { .. } => {}
+            XmlEvent::EndDocument => {}
+            XmlEvent::ProcessingInstruction { .. } => {}
+            XmlEvent::StartElement { name, attributes, namespace } => {
+                let start_element = XmlStartElement {name: &name, attributes: &attributes, _namespace: &namespace};
+                let mut links = from_xml_start_element(&start_element)?;
+                collector.append(&mut links)
+            }
+            XmlEvent::EndElement { .. } => {}
+            XmlEvent::CData(_) => {}
+            XmlEvent::Comment(_) => {}
+            XmlEvent::Characters(_) => {}
+            XmlEvent::Whitespace(_) => {}
+        }
+    }
+    
+    Ok(collector)
+}
+
+fn from_xml_start_element(start_element: &XmlStartElement) -> Result<Vec<XmlLink>, XmlError> {
+    start_element
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
