@@ -1,6 +1,6 @@
 use std::io::read_to_string;
 use thiserror::Error;
-use crate::link_extractor::find_links;
+use crate::link_extractor::find_urls;
 
 #[derive(Error, Debug)]
 pub enum LinkExtractionError {
@@ -42,7 +42,7 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, LinkExtractionError>{
     let file_type = infer::get(&bytes);
 
     if file_type == None {
-        return Ok(find_links(&read_to_string(bytes)?).iter().map(|link| link.to_string()).collect());
+        return Ok(find_urls(&read_to_string(bytes)?).iter().map(|link| link.to_string()).collect());
     }
     let file_type = file_type.unwrap();
 

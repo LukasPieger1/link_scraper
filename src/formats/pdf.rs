@@ -2,7 +2,7 @@ use std::string::String;
 use itertools::Itertools;
 use thiserror::Error;
 use mupdf::{Document, Page};
-use crate::link_extractor::find_links;
+use crate::link_extractor::find_urls;
 
 #[derive(Error, Debug)]
 pub enum PdfExtractionError {
@@ -63,7 +63,7 @@ fn extract_links_from_doc(doc: Document) -> Result<Vec<String>, PdfExtractionErr
 
 /// Finds plaintext links on a page
 fn find_text_links(page: &Page, links: &mut Vec<String>) -> Result<(), PdfExtractionError> {
-    find_links(&page.to_text()?).iter()
+    find_urls(&page.to_text()?).iter()
         .for_each(|link|
             links.push(link.to_string()));
     Ok(())
@@ -72,7 +72,7 @@ fn find_text_links(page: &Page, links: &mut Vec<String>) -> Result<(), PdfExtrac
 /// Finds hyperlinks on a page
 fn find_hyperlinks(page: &Page, links: &mut Vec<String>) -> Result<(), PdfExtractionError> {
     for link in page.links()? {
-        find_links(&link.uri).iter()
+        find_urls(&link.uri).iter()
             .for_each(|link|
                 links.push(link.to_string()));
     }

@@ -3,7 +3,7 @@ use itertools::Itertools;
 use thiserror::Error;
 use xml::EventReader;
 use xml::reader::XmlEvent;
-use crate::link_extractor::find_links;
+use crate::link_extractor::find_urls;
 
 #[derive(Error, Debug)]
 pub enum OoxmlExtractionError {
@@ -63,7 +63,7 @@ fn extract_links_from_rels_file(data: impl Read, collector: &mut Vec<String>) ->
         if let XmlEvent::StartElement { name: _, attributes, .. } = event {
             let attributes_with_potential_links = attributes.iter().filter(|att| &att.name.local_name != "Type");
             for attribute in attributes_with_potential_links {
-                find_links(&attribute.value).iter().for_each(|link| collector.push(link.to_string()))
+                find_urls(&attribute.value).iter().for_each(|link| collector.push(link.to_string()))
             }
         }
     }
@@ -84,7 +84,7 @@ fn extract_links_from_xml_file(data: impl Read, collector: &mut Vec<String>) -> 
             _ => None
         };
         if let Some(text) = raw_text {
-            find_links(&text).iter().for_each(|link| collector.push(link.to_string()));
+            find_urls(&text).iter().for_each(|link| collector.push(link.to_string()));
         }
     }
     Ok(())
