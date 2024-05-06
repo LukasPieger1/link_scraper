@@ -5,7 +5,7 @@ use rtf_parser::lexer::Lexer;
 use rtf_parser::tokens::Token;
 use thiserror::Error;
 
-use crate::link_extractor::find_links;
+use crate::link_extractor::find_urls;
 
 #[derive(Error, Debug)]
 pub enum RtfExtractionError {
@@ -24,7 +24,7 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, RtfExtractionError> {
     tokens.iter().for_each(|token| if let Token::PlainText(pt) = token {text += pt; text += " "});
     // let mut document = Parser::new(tokens);
     // let text = document.parse()?.get_text();
-    Ok(find_links(&text).iter().map(|link| link.to_string()).collect_vec())
+    Ok(find_urls(&text).iter().map(|link| link.to_string()).collect_vec())
 }
 
 #[cfg(test)]

@@ -1,4 +1,4 @@
-use crate::link_extractor::find_links;
+use crate::link_extractor::find_urls;
 use reqwest::blocking::Response;
 use reqwest::{blocking, Url};
 use thiserror::Error;
@@ -19,7 +19,7 @@ pub fn get(url: Url) -> Result<Response, WebsiteExtractionError> {
 #[cfg(feature = "link_extraction")]
 fn extract_links(response: Response) -> Result<Vec<String>, WebsiteExtractionError> {
     let plain_text = response.text()?;
-    Ok(find_links(&plain_text)
+    Ok(find_urls(&plain_text)
         .iter()
         .map(|it| it.to_string())
         .collect())
@@ -33,7 +33,7 @@ pub fn extract_links_from_url(url: Url) -> Result<Vec<String>, WebsiteExtraction
 #[cfg(feature = "link_extraction")]
 pub fn extract_links_from_html(html_byte_array: &str) -> Vec<String> {
     // TODO do you want this to be a &[u8] instead?
-    find_links(html_byte_array)
+    find_urls(html_byte_array)
         .iter()
         .map(|it| it.to_string())
         .collect()

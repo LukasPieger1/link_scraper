@@ -9,7 +9,7 @@ use xml::reader::XmlEvent;
 use crate::formats::xml::xlink::elements::{XlinkElement, XlinkExtendedElement, XlinkSimpleElement};
 use crate::formats::xml::xlink::XLinkFormatError::{ArcOutsideOfExtendedError, ExtendedInsideOfExtendedError, LocatorOutsideOfExtendedError, ResourceOutsideOfExtendedError, SimpleInsideOfExtendedError};
 use crate::formats::xml::XmlStartElement;
-use crate::link_extractor::find_links;
+use crate::link_extractor::find_urls;
 
 #[derive(Error, Debug)]
 pub enum XLinkFormatError {
@@ -40,7 +40,7 @@ fn get_xlink_attribute_value(key: &str, attributes: &Vec<OwnedAttribute>) -> Opt
 
 #[derive(Debug)]
 pub struct XLinkLink {
-    pub href: String,
+    pub url: String,
     pub location: TextPosition,
     pub kind: XLinkLinkType
 }
@@ -90,9 +90,9 @@ fn from_start_element(xml_start_element: XmlStartElement, mut parser: &mut Event
 fn links_from_option_string(role: Option<String>, link_type: XLinkLinkType, position: TextPosition) -> Vec<XLinkLink> {
     let Some(role) = role
         else { return vec![] };
-    let links = find_links(&role).iter()
+    let links = find_urls(&role).iter()
         .map(|link| XLinkLink {
-            href: link.to_string(),
+            url: link.to_string(),
             location: position,
             kind: link_type,
         }).collect_vec();
@@ -116,7 +116,7 @@ fn from_xlink_extended(xlink_extended_element: XlinkExtendedElement, parser: &mu
                         let mut locator_links = vec![];
                         
                         locator_links.push(XLinkLink {
-                            href: element.href,
+                            url: element.href,
                             location: parser.position(),
                             kind: XLinkLinkType::External
                         });

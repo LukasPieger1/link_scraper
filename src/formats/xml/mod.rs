@@ -5,7 +5,7 @@ use xml::EventReader;
 use xml::name::OwnedName;
 use xml::namespace::Namespace;
 use xml::reader::XmlEvent;
-use crate::link_extractor::find_links;
+use crate::link_extractor::find_urls;
 
 #[derive(Error, Debug)]
 pub enum XmlError {
@@ -25,7 +25,7 @@ pub enum XmlLinkType {
 
 #[derive(Debug)]
 pub struct XmlLink {
-    pub href: String,
+    pub url: String,
     pub location: TextPosition,
     pub kind: XmlLinkType
 }
@@ -64,7 +64,7 @@ pub fn extract_links_from_href_tags(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlErr
     Ok(collector)
 }
 
-/// Extracts links from any xml-file
+/// Extracts links from any file with a xml-schema
 pub fn extract_links(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlError> {
     let mut collector: Vec<XmlLink> = vec![];
     
@@ -75,10 +75,10 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlError> {
                 collector.append(&mut from_xml_start_element_attributes(&attributes, &parser)?)
             }
             XmlEvent::Comment(comment) => {
-                collector.append(&mut find_links(comment)
+                collector.append(&mut find_urls(comment)
                     .iter()
                     .map(|&link| XmlLink {
-                        href: link.to_string(),
+                        url: link.to_string(),
                         location: parser.position(),
                         kind: XmlLinkType::Comment,
                     })
@@ -86,10 +86,10 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlError> {
                 )
             }
             XmlEvent::Characters(chars) => {
-                collector.append(&mut find_links(chars)
+                collector.append(&mut find_urls(chars)
                     .iter()
                     .map(|&link| XmlLink {
-                        href: link.to_string(),
+                        url: link.to_string(),
                         location: parser.position(),
                         kind: XmlLinkType::PlainText,
                     })
@@ -107,9 +107,9 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlError> {
 fn from_xml_start_element_attributes(attributes: &Vec<OwnedAttribute>, parser: &EventReader<&[u8]>) -> Result<Vec<XmlLink>, XmlError> {
     let mut ret: Vec<XmlLink> = vec![];
     for attribute in attributes {
-        let mut links = find_links(&attribute.value)
+        let mut links = find_urls(&attribute.value)
             .iter().map(|&link| XmlLink {
-            href: link.to_string(),
+            url: link.to_string(),
             location: parser.position(),
             kind: XmlLinkType::Attribute(attribute.clone()),
         }).collect();

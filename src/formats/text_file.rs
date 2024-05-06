@@ -1,6 +1,6 @@
 use std::io::{BufReader, Read};
 use thiserror::Error;
-use crate::link_extractor::find_links;
+use crate::link_extractor::find_urls;
 
 #[derive(Error, Debug)]
 pub enum TextFileExtractionError {
@@ -17,7 +17,7 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, TextFileExtractionErro
     let mut buf_reader = BufReader::new(bytes);
     let mut contents = String::new();
     buf_reader.read_to_string(&mut contents)?;
-    Ok(find_links(&contents).iter().map(|link| link.to_string()).collect())
+    Ok(find_urls(&contents).iter().map(|link| link.to_string()).collect())
 }
 
 #[cfg(test)]
