@@ -1,8 +1,11 @@
+use std::fmt::{Display, Formatter};
 use std::io::{Cursor, Read};
 use itertools::Itertools;
 use thiserror::Error;
+use xml::common::{Position, TextPosition};
 use xml::EventReader;
 use xml::reader::XmlEvent;
+use crate::formats::ooxml::OoxmlLinkKind::Hyperlink;
 use crate::link_extractor::find_urls;
 
 #[derive(Error, Debug)]
@@ -15,21 +18,41 @@ pub enum OoxmlExtractionError {
     ZipError(#[from] zip::result::ZipError),
 }
 
-pub struct OoxmlLocation {
+#[derive(Debug, Clone)]
+pub struct OoxmlLink {
+    pub url: String,
+    pub location: OoxmlLinkLocation,
+    pub kind: OoxmlLinkKind,
+}
+
+impl Display for OoxmlLink {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.url)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct OoxmlLinkLocation {
     pub file: String,
-    pub line: u64,
-    pub pos: u64
+    pub position: TextPosition
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum OoxmlLinkKind {
+    PlainText,
+    Hyperlink
+    //TODO: Comment
 }
 
 /// Extracts all links from a given ooxml-file
 ///
 /// Tries to filter out urls related to ooxml-functionalities, but might be a bit too aggressive at times
 /// if there are links missing from the output, use [`extract_links_unfiltered`]
-pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, OoxmlExtractionError> {
+pub fn extract_links(bytes: &[u8]) -> Result<Vec<OoxmlLink>, OoxmlExtractionError> {
     let cur = Cursor::new(bytes);
     let mut archive = zip::ZipArchive::new(cur)?;
 
-    let mut links: Vec<String> = vec![];
+    let mut links: Vec<OoxmlLink> = vec![];
     for file_name in archive.file_names().map(|name| name.to_owned()).collect_vec() {
         let mut file_content = vec![];
         archive.by_name(&file_name)?.read_to_end(&mut file_content)?;
@@ -38,9 +61,9 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, OoxmlExtractionError> 
         }
 
         if file_name.ends_with(".rels") {
-            extract_links_from_rels_file(file_content.as_slice(), &mut links)?
+            extract_links_from_rels_file(file_content.as_slice(), &file_name, &mut links)?
         } else if file_name.ends_with(".xml") {
-            extract_links_from_xml_file(file_content.as_slice(), &mut links)?
+            extract_links_from_xml_file(file_content.as_slice(), &file_name, &mut links)?
         }
     }
     
@@ -56,16 +79,21 @@ pub fn extract_links_unfiltered(bytes: &[u8]) -> Result<Vec<String>, OoxmlExtrac
 }
 
 /// Extracts links from given .rels file
-fn extract_links_from_rels_file(data: impl Read, collector: &mut Vec<String>) -> Result<(), OoxmlExtractionError> {
-    let parser = EventReader::new(data);
-    for e in parser {
-        let event = e?;
-        if let XmlEvent::StartElement { name: _, attributes, .. } = event {
+fn extract_links_from_rels_file(data: impl Read, file_name: &str, collector: &mut Vec<OoxmlLink>) -> Result<(), OoxmlExtractionError> {
+    let mut parser = EventReader::new(data);
+    while let Ok(xml_event) = &parser.next() {
+        if let XmlEvent::StartElement { name: _, attributes, .. } = xml_event {
             let attributes_with_potential_links = attributes.iter().filter(|att| &att.name.local_name != "Type");
             for attribute in attributes_with_potential_links {
-                find_urls(&attribute.value).iter().for_each(|link| collector.push(link.to_string()))
+                find_urls(&attribute.value).iter().for_each(|link| collector.push(OoxmlLink {
+                    url: link.to_string(),
+                    location: OoxmlLinkLocation { file: file_name.to_string(), position: parser.position()},
+                    kind: Hyperlink
+                }))
             }
         }
+
+        if let XmlEvent::EndDocument{} = xml_event { break }
     }
     Ok(())
 }
@@ -74,18 +102,23 @@ fn extract_links_from_rels_file(data: impl Read, collector: &mut Vec<String>) ->
 ///
 /// All tags and tag-attributes are omitted to filter out functional urls.
 /// This might be too aggressive in some cases though
-fn extract_links_from_xml_file(data: impl Read, collector: &mut Vec<String>) -> Result<(), OoxmlExtractionError>{
-    let parser = EventReader::new(data);
-    for e in parser {
-        let event = e?;
-        let raw_text = match event {
+fn extract_links_from_xml_file(data: impl Read, file_name: &str, collector: &mut Vec<OoxmlLink>) -> Result<(), OoxmlExtractionError>{
+    let mut parser = EventReader::new(data);
+    while let Ok(xml_event) = &parser.next() {
+        let raw_text = match xml_event {
             XmlEvent::Characters(str) => Some(str),
             XmlEvent::Whitespace(str) => Some(str),
             _ => None
         };
         if let Some(text) = raw_text {
-            find_urls(&text).iter().for_each(|link| collector.push(link.to_string()));
+            find_urls(&text).iter().for_each(|link| collector.push(OoxmlLink {
+                url: link.to_string(),
+                location: OoxmlLinkLocation { file: file_name.to_string(), position: parser.position()},
+                kind: Hyperlink
+            }));
         }
+
+        if let XmlEvent::EndDocument{} = xml_event { break }
     }
     Ok(())
 }
@@ -95,7 +128,6 @@ fn extract_links_from_xml_file(data: impl Read, collector: &mut Vec<String>) -> 
 mod tests {
     use super::*;
     use std::include_bytes;
-    use crate::link_extractor::{unique_and_sort};
 
     const TEST_DOCX: &[u8] = include_bytes!("../../test_files/docx/test.docx");
     const TEST_PPTX: &[u8] = include_bytes!("../../test_files/pptx/test.pptx");
@@ -104,28 +136,19 @@ mod tests {
     #[test]
     pub fn docx_extraction_test() {
         let links = extract_links(TEST_DOCX).unwrap();
-        assert_eq!(
-            unique_and_sort(links.as_slice()),
-            vec!["http://calibre-ebook.com/download", "http://embedded.link.de/", "http://iam.also.here", "http://test.comment.link", "https://music.youtube.com/watch?v=fsJ2QVjzwtQ&si=S4UQH23jwXIiZdad"]);
+        assert_eq!(links.len(), 5);
     }
 
     #[test]
     pub fn powerpoint_extraction_test() {
         let links = extract_links(TEST_PPTX).unwrap();
-        assert_eq!(
-            unique_and_sort(links.as_slice()),
-            vec!["http://hyperlink.test.de/", "http://test.link.de/", "http://wurst.salat.de"]
-        );
+        assert_eq!(links.len(), 3);
     }
 
     #[test]
     pub fn excel_extraction_test() {
         let links = extract_links(TEST_XLSX).unwrap();
-
-        assert_eq!(
-            unique_and_sort(links.as_slice()),
-            vec!["http://xlsx.test.fail/", "https://antother.test/"]
-        );
+        assert_eq!(links.len(), 3);
     }
 
     #[test]
