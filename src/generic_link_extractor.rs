@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 use std::io::read_to_string;
 use thiserror::Error;
 use crate::link_extractor::find_urls;
@@ -50,7 +51,24 @@ pub enum Link {
     PdfLink(String),
     #[cfg(feature = "rtf")]
     RtfLink(String)
-    
+}
+
+impl Display for Link {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Link::StringLink(link) => {write!(f, "StringLink({})", link)}
+            #[cfg(feature = "text_file")]
+            Link::TextFileLink(link) => {write!(f, "TextFileLink({})", link)}
+            #[cfg(feature = "odf")]
+            Link::OdfLink(link) => {write!(f, "OdfLink({})", link)}
+            #[cfg(feature = "ooxml")]
+            Link::OoxmlLink(link) => {write!(f, "OoxmlLink({})", link)}
+            #[cfg(feature = "pdf")]
+            Link::PdfLink(link) => {write!(f, "PdfLink({})", link)}
+            #[cfg(feature = "rtf")]
+            Link::RtfLink(link) => {write!(f, "RtfLink({})", link)}
+        }
+    }
 }
 
 /// Guesses the file-type and extracts links from the file.
@@ -150,16 +168,29 @@ mod tests {
 
     #[test]
     fn generic_extraction_test() {
-        println!("{:?}", extract_links(b"http://test.com/").unwrap());
-        println!("{:?}", extract_links(TEST_DOCX).unwrap());
-        println!("{:?}", extract_links(TEST_PPTX).unwrap());
-        println!("{:?}", extract_links(TEST_XLSX).unwrap());
-        println!("{:?}", extract_links(TEST_ODT).unwrap());
-        println!("{:?}", extract_links(TEST_ODS).unwrap());
-        println!("{:?}", extract_links(TEST_OTT).unwrap());
-        println!("{:?}", extract_links(TEST_ODP).unwrap());
-        println!("{:?}", extract_links(TEST_PDF).unwrap());
-        println!("{:?}", extract_links(TEST_RTF).unwrap());
-        println!("{:?}", extract_links(TEST_XML).unwrap());
+        println!("{}", LinkVec(extract_links(b"http://test.com/").unwrap()));
+        println!("{}", LinkVec(extract_links(TEST_DOCX).unwrap()));
+        println!("{}", LinkVec(extract_links(TEST_PPTX).unwrap()));
+        println!("{}", LinkVec(extract_links(TEST_XLSX).unwrap()));
+        println!("{}", LinkVec(extract_links(TEST_ODT).unwrap()));
+        println!("{}", LinkVec(extract_links(TEST_ODS).unwrap()));
+        println!("{}", LinkVec(extract_links(TEST_OTT).unwrap()));
+        println!("{}", LinkVec(extract_links(TEST_ODP).unwrap()));
+        println!("{}", LinkVec(extract_links(TEST_PDF).unwrap()));
+        println!("{}", LinkVec(extract_links(TEST_RTF).unwrap()));
+        println!("{}", LinkVec(extract_links(TEST_XML).unwrap()));
+    }
+
+
+    #[derive(Debug)]
+    struct LinkVec(Vec<Link>);
+    impl Display for LinkVec {
+        fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+            write!(f, "[")?;
+            for link in &self.0 {
+                write!(f, "{}", link)?;
+            }
+            write!(f, "]")
+        }
     }
 }

@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 use std::io::{Cursor, Read};
 use itertools::Itertools;
 use thiserror::Error;
@@ -22,6 +23,12 @@ pub struct OdfLink {
     pub url: String,
     pub location: OdfLinkLocation,
     pub kind: OdfLinkKind,
+}
+
+impl Display for OdfLink {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.url)
+    }
 }
 
 #[derive(Debug, Clone)]
