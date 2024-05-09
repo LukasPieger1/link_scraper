@@ -48,7 +48,7 @@ pub enum Link {
     #[cfg(feature = "ooxml")]
     OoxmlLink(crate::formats::ooxml::OoxmlLink),
     #[cfg(feature = "pdf")]
-    PdfLink(String),
+    PdfLink(crate::formats::pdf::PdfLink),
     #[cfg(feature = "rtf")]
     RtfLink(crate::formats::rtf::RtfLink)
 }
