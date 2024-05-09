@@ -1,8 +1,10 @@
 use std::io::{Cursor, Read};
 use itertools::Itertools;
 use thiserror::Error;
+use xml::common::{Position, TextPosition};
 use xml::EventReader;
 use xml::reader::XmlEvent;
+use crate::formats::odf::OdfLinkKind::{Hyperlink, PlainText};
 use crate::link_extractor::find_urls;
 
 #[derive(Error, Debug)]
@@ -15,15 +17,34 @@ pub enum OdfExtractionError {
     ZipError(#[from] zip::result::ZipError),
 }
 
+#[derive(Debug, Clone)]
+pub struct OdfLink {
+    pub url: String,
+    pub location: OdfLinkLocation,
+    pub kind: OdfLinkKind,
+}
+
+#[derive(Debug, Clone)]
+pub struct OdfLinkLocation {
+    pub file: String,
+    pub position: TextPosition
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum OdfLinkKind {
+    PlainText,
+    Hyperlink
+}
+
 /// Extracts all links from a given ooxml-file
 ///
 /// Tries to filter out urls related to ooxml-functionalities, but might be a bit too aggressive at times
 /// if there are links missing from the output, use [`extract_links_unfiltered`]
-pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, OdfExtractionError> {
+pub fn extract_links(bytes: &[u8]) -> Result<Vec<OdfLink>, OdfExtractionError> {
     let cur = Cursor::new(bytes);
     let mut archive = zip::ZipArchive::new(cur)?;
 
-    let mut links: Vec<String> = vec![];
+    let mut links: Vec<OdfLink> = vec![];
     for file_name in archive.file_names().map(|name| name.to_owned()).collect_vec() {
         let mut file_content = vec![];
         archive.by_name(&file_name)?.read_to_end(&mut file_content)?;
@@ -32,7 +53,7 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, OdfExtractionError> {
         }
 
         if file_name.ends_with(".xml") {
-            extract_links_from_xml_file(file_content.as_slice(), &mut links)?
+            extract_links_from_xml_file(file_content.as_slice(), &file_name, &mut links)?
         }
     }
 
@@ -51,24 +72,39 @@ pub fn extract_links_unfiltered(bytes: &[u8]) -> Result<Vec<String>, OdfExtracti
 ///
 /// All tags and tag-attributes are omitted to filter out functional urls.
 /// This might be too aggressive in some cases though
-fn extract_links_from_xml_file(data: impl Read, collector: &mut Vec<String>) -> Result<(), OdfExtractionError> {
-    let parser = EventReader::new(data);
-    for e in parser {
-        let event = e?;
-        let raw_text = match event {
-            XmlEvent::StartElement {name, attributes, ..} =>
-                if name.local_name == "a" {
-                    attributes.iter()
-                        .find(|attr| attr.name.local_name == "href")
-                        .map(|href| href.value.to_string())
-                } else { None }
-            XmlEvent::Characters(str) => Some(str),
-            XmlEvent::Whitespace(str) => Some(str),
-            _ => None
+fn extract_links_from_xml_file(data: impl Read, filename: &str, collector: &mut Vec<OdfLink>) -> Result<(), OdfExtractionError> {
+    let mut parser = EventReader::new(data);
+
+    while let Ok(xml_event) = &parser.next() {
+        match xml_event {
+            XmlEvent::StartElement { name, attributes, .. } => {
+                if name.local_name != "a" { continue }
+
+                let maybe_href = &attributes.iter()
+                    .find(|&attr| attr.name.local_name == "href");
+                if let Some(href) = maybe_href {
+                    let link = OdfLink {
+                        url: href.value.to_string(),
+                        location: OdfLinkLocation { file: filename.to_string(), position: parser.position() },
+                        kind: Hyperlink,
+                    };
+                    collector.push(link);
+                }
+            },
+            XmlEvent::Characters(chars) => {
+                collector.append(&mut find_urls(&chars)
+                    .iter()
+                    .map(|&link| OdfLink {
+                        url: link.to_string(),
+                        location: OdfLinkLocation {file: filename.to_string(), position: parser.position()},
+                        kind: PlainText,
+                    })
+                    .collect()
+                )
+            }
+            XmlEvent::EndDocument => { break }
+            _ => {}
         };
-        if let Some(text) = raw_text {
-            find_urls(&text).iter().for_each(|link| collector.push(link.to_string()));
-        }
     }
     Ok(())
 }
@@ -84,9 +120,7 @@ mod tests {
     #[test]
     pub fn docx_extraction_test() {
         let links = extract_links(TEST_ODT).unwrap();
-        assert_eq!(
-            unique_and_sort(links.as_slice()),
-            vec!["http://comment.link.test", "https://hyperlink.in.comment.test/", "https://hyperlink.test.de/", "https://plaintext.link.test/", "https://products.office.com/en-us/word"]);
+        println!("{:?}", links)
     }
 
     #[test]

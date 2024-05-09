@@ -37,12 +37,28 @@ pub enum LinkExtractionError {
     ExtractionFailed(String)
 }
 
+#[derive(Debug, Clone)]
+pub enum Link {
+    StringLink(String),
+    #[cfg(feature = "text_file")]
+    TextFileLink(String),
+    #[cfg(feature = "odf")]
+    OdfLink(crate::formats::odf::OdfLink),
+    #[cfg(feature = "ooxml")]
+    OoxmlLink(String),
+    #[cfg(feature = "pdf")]
+    PdfLink(String),
+    #[cfg(feature = "rtf")]
+    RtfLink(String)
+    
+}
+
 /// Guesses the file-type and extracts links from the file.
-pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, LinkExtractionError>{
+pub fn extract_links(bytes: &[u8]) -> Result<Vec<Link>, LinkExtractionError>{
     let file_type = infer::get(&bytes);
 
     if file_type == None {
-        return Ok(find_urls(&read_to_string(bytes)?).iter().map(|link| link.to_string()).collect());
+        return Ok(find_urls(&read_to_string(bytes)?).iter().map(|link| Link::StringLink(link.to_string())).collect());
     }
     let file_type = file_type.unwrap();
 
@@ -66,52 +82,52 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, LinkExtractionError>{
     }
 }
 
-fn try_zip(bytes: &[u8]) -> Result<Vec<String>, LinkExtractionError> {
+fn try_zip(bytes: &[u8]) -> Result<Vec<Link>, LinkExtractionError> {
     #[allow(unused_assignments)]
-        let mut ret = Err(LinkExtractionError::FeatureNotEnabledError("Zip-file detected. Would try to parse it with `ooxml`/`odf`-feature but none of them is enabled. Please enable it in your dependencies.".to_string()));
+        let ret: Result<Vec<Link>, LinkExtractionError> = Err(LinkExtractionError::FeatureNotEnabledError("Zip-file detected. Would try to parse it with `ooxml`/`odf`-feature but none of them is enabled. Please enable it in your dependencies.".to_string()));
     #[cfg(feature = "ooxml")] {
-        ret = try_ooxml(bytes).map_err(|e| LinkExtractionError::from(e));
-        if let Ok(res) = ret { return Ok(res) }
+        let ooxml_result = try_ooxml(bytes).map_err(|e| LinkExtractionError::from(e));
+        if let Ok(res) = ooxml_result { return Ok(res) }
     }
     #[cfg(feature = "odf")] {
-        ret = try_odf(bytes).map_err(|e| LinkExtractionError::from(e));
-        if let Ok(res) = ret { return Ok(res) }
+        let odf_result = try_odf(bytes).map_err(|e| LinkExtractionError::from(e));
+        if let Ok(res) = odf_result { return Ok(res) }
     }
 
     return ret;
 }
 
-fn try_text_file(bytes: &[u8]) -> Result<Vec<String>, LinkExtractionError> {
+fn try_text_file(bytes: &[u8]) -> Result<Vec<Link>, LinkExtractionError> {
     #[cfg(feature = "text_file")]
-    return Ok(crate::formats::text_file::extract_links(bytes)?);
+    return Ok(crate::formats::text_file::extract_links(bytes)?.into_iter().map(|link| Link::TextFileLink(link)).collect());
     #[cfg(not(feature = "text_file"))]
     return Err(LinkExtractionError::FeatureNotEnabledError("text-document detected, but cannot parse it because `text_file`-feature is not enabled. Please enable it in your dependencies.".to_string()))
 }
 
-fn try_odf(bytes: &[u8]) -> Result<Vec<String>, LinkExtractionError> {
+fn try_odf(bytes: &[u8]) -> Result<Vec<Link>, LinkExtractionError> {
     #[cfg(feature = "odf")]
-    return Ok(crate::formats::odf::extract_links(bytes)?);
+    return Ok(crate::formats::odf::extract_links(bytes)?.into_iter().map(|link| Link::OdfLink(link)).collect());
     #[cfg(not(feature = "odf"))]
     return Err(LinkExtractionError::FeatureNotEnabledError("OpenOffice document detected, but cannot parse it because `odf`-feature is not enabled. Please enable it in your dependencies.".to_string()))
 }
 
-fn try_rtf(bytes: &[u8]) -> Result<Vec<String>, LinkExtractionError> {
+fn try_rtf(bytes: &[u8]) -> Result<Vec<Link>, LinkExtractionError> {
     #[cfg(feature = "rtf")]
-    return Ok(crate::formats::rtf::extract_links(bytes)?);
+    return Ok(crate::formats::rtf::extract_links(bytes)?.into_iter().map(|link| Link::RtfLink(link)).collect());
     #[cfg(not(feature = "rtf"))]
     return Err(LinkExtractionError::FeatureNotEnabledError(".rtf-document detected, but cannot parse it because `rtf`-feature is not enabled. Please enable it in your dependencies.".to_string()))
 }
 
-fn try_pdf(bytes: &[u8]) -> Result<Vec<String>, LinkExtractionError> {
+fn try_pdf(bytes: &[u8]) -> Result<Vec<Link>, LinkExtractionError> {
     #[cfg(feature = "pdf")]
-    return Ok(crate::formats::pdf::extract_links(bytes)?);
+    return Ok(crate::formats::pdf::extract_links(bytes)?.into_iter().map(|link| Link::PdfLink(link)).collect());
     #[cfg(not(feature = "pdf"))]
     return Err(LinkExtractionError::FeatureNotEnabledError("PDF-document detected, but cannot parse it because `pdf`-feature is not enabled. Please enable it in your dependencies.".to_string()))
 }
 
-fn try_ooxml(bytes: &[u8]) -> Result<Vec<String>, LinkExtractionError> {
+fn try_ooxml(bytes: &[u8]) -> Result<Vec<Link>, LinkExtractionError> {
     #[cfg(feature = "ooxml")]
-    return Ok(crate::formats::ooxml::extract_links(bytes)?);
+    return Ok(crate::formats::ooxml::extract_links(bytes)?.into_iter().map(|link| Link::OoxmlLink(link)).collect());
     #[cfg(not(feature = "ooxml"))]
     return Err(LinkExtractionError::FeatureNotEnabledError("Microsoft-office document detected, but cannot parse it because `ooxml`-feature is not enabled. Please enable it in your dependencies.".to_string()))
 }
