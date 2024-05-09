@@ -21,7 +21,7 @@ fn extract_links(response: Response) -> Result<Vec<String>, WebsiteExtractionErr
     let plain_text = response.text()?;
     Ok(find_urls(&plain_text)
         .iter()
-        .map(|it| it.to_string())
+        .map(|it| it.as_str().to_string())
         .collect())
 }
 
@@ -35,7 +35,7 @@ pub fn extract_links_from_html(html_byte_array: &str) -> Vec<String> {
     // TODO do you want this to be a &[u8] instead?
     find_urls(html_byte_array)
         .iter()
-        .map(|it| it.to_string())
+        .map(|it| it.as_str().to_string())
         .collect()
 }
 

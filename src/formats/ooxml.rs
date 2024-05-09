@@ -86,7 +86,7 @@ fn extract_links_from_rels_file(data: impl Read, file_name: &str, collector: &mu
             let attributes_with_potential_links = attributes.iter().filter(|att| &att.name.local_name != "Type");
             for attribute in attributes_with_potential_links {
                 find_urls(&attribute.value).iter().for_each(|link| collector.push(OoxmlLink {
-                    url: link.to_string(),
+                    url: link.as_str().to_string(),
                     location: OoxmlLinkLocation { file: file_name.to_string(), position: parser.position()},
                     kind: Hyperlink
                 }))
@@ -112,7 +112,7 @@ fn extract_links_from_xml_file(data: impl Read, file_name: &str, collector: &mut
         };
         if let Some(text) = raw_text {
             find_urls(&text).iter().for_each(|link| collector.push(OoxmlLink {
-                url: link.to_string(),
+                url: link.as_str().to_string(),
                 location: OoxmlLinkLocation { file: file_name.to_string(), position: parser.position()},
                 kind: Hyperlink
             }));

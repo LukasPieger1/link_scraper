@@ -65,7 +65,7 @@ fn extract_links_from_doc(doc: Document) -> Result<Vec<String>, PdfExtractionErr
 fn find_text_links(page: &Page, links: &mut Vec<String>) -> Result<(), PdfExtractionError> {
     find_urls(&page.to_text()?).iter()
         .for_each(|link|
-            links.push(link.to_string()));
+            links.push(link.as_str().to_string()));
     Ok(())
 }
 
@@ -74,7 +74,7 @@ fn find_hyperlinks(page: &Page, links: &mut Vec<String>) -> Result<(), PdfExtrac
     for link in page.links()? {
         find_urls(&link.uri).iter()
             .for_each(|link|
-                links.push(link.to_string()));
+                links.push(link.as_str().to_string()));
     }
     Ok(())
 }
