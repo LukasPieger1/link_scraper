@@ -23,7 +23,7 @@ pub enum RtfExtractionError {
 pub struct RtfLink {
     pub url: String,
     pub location: usize,
-    //TODO make location less useless
+    //TODO make location more useful
 }
 
 impl Display for RtfLink {
