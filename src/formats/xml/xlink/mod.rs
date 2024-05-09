@@ -92,7 +92,7 @@ fn links_from_option_string(role: Option<String>, link_type: XLinkLinkType, posi
         else { return vec![] };
     let links = find_urls(&role).iter()
         .map(|link| XLinkLink {
-            url: link.to_string(),
+            url: link.as_str().to_string(),
             location: position,
             kind: link_type,
         }).collect_vec();

@@ -50,7 +50,7 @@ pub enum Link {
     #[cfg(feature = "pdf")]
     PdfLink(String),
     #[cfg(feature = "rtf")]
-    RtfLink(String)
+    RtfLink(crate::formats::rtf::RtfLink)
 }
 
 impl Display for Link {
@@ -76,7 +76,7 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<Link>, LinkExtractionError>{
     let file_type = infer::get(&bytes);
 
     if file_type == None {
-        return Ok(find_urls(&read_to_string(bytes)?).iter().map(|link| Link::StringLink(link.to_string())).collect());
+        return Ok(find_urls(&read_to_string(bytes)?).iter().map(|link| Link::StringLink(link.as_str().to_string())).collect());
     }
     let file_type = file_type.unwrap();
 

@@ -17,7 +17,7 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, TextFileExtractionErro
     let mut buf_reader = BufReader::new(bytes);
     let mut contents = String::new();
     buf_reader.read_to_string(&mut contents)?;
-    Ok(find_urls(&contents).iter().map(|link| link.to_string()).collect())
+    Ok(find_urls(&contents).iter().map(|link| link.as_str().to_string()).collect())
 }
 
 #[cfg(test)]

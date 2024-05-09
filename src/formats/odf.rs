@@ -102,8 +102,8 @@ fn extract_links_from_xml_file(data: impl Read, filename: &str, collector: &mut 
             XmlEvent::Characters(chars) => {
                 collector.append(&mut find_urls(&chars)
                     .iter()
-                    .map(|&link| OdfLink {
-                        url: link.to_string(),
+                    .map(|link| OdfLink {
+                        url: link.as_str().to_string(),
                         location: OdfLinkLocation {file: filename.to_string(), position: parser.position()},
                         kind: PlainText,
                     })

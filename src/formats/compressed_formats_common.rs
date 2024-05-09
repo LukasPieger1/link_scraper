@@ -15,7 +15,7 @@ pub(crate) fn extract_links_unfiltered(bytes: &[u8]) -> Result<Vec<String>, ZipE
         let mut file_content = String::new();
         if archive.by_name(&file_name)?.read_to_string(&mut file_content).is_err() {continue}
 
-        find_urls(&file_content).iter().for_each(|link| links.push(link.to_string()))
+        find_urls(&file_content).iter().for_each(|link| links.push(link.as_str().to_string()))
     }
 
     Ok(links)

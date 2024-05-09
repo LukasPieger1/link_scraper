@@ -77,8 +77,8 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlError> {
             XmlEvent::Comment(comment) => {
                 collector.append(&mut find_urls(comment)
                     .iter()
-                    .map(|&link| XmlLink {
-                        url: link.to_string(),
+                    .map(|link| XmlLink {
+                        url: link.as_str().to_string(),
                         location: parser.position(),
                         kind: XmlLinkType::Comment,
                     })
@@ -88,8 +88,8 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlError> {
             XmlEvent::Characters(chars) => {
                 collector.append(&mut find_urls(chars)
                     .iter()
-                    .map(|&link| XmlLink {
-                        url: link.to_string(),
+                    .map(|link| XmlLink {
+                        url: link.as_str().to_string(),
                         location: parser.position(),
                         kind: XmlLinkType::PlainText,
                     })
@@ -108,8 +108,8 @@ fn from_xml_start_element_attributes(attributes: &Vec<OwnedAttribute>, parser: &
     let mut ret: Vec<XmlLink> = vec![];
     for attribute in attributes {
         let mut links = find_urls(&attribute.value)
-            .iter().map(|&link| XmlLink {
-            url: link.to_string(),
+            .iter().map(|link| XmlLink {
+            url: link.as_str().to_string(),
             location: parser.position(),
             kind: XmlLinkType::Attribute(attribute.clone()),
         }).collect();
