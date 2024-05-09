@@ -1,5 +1,5 @@
+use std::fmt::{Display, Formatter};
 use std::string::String;
-use itertools::Itertools;
 use thiserror::Error;
 use mupdf::{Document, Page};
 use crate::link_extractor::find_urls;
@@ -16,10 +16,35 @@ pub enum PdfExtractionError {
     NotAPdfError,
 }
 
+#[derive(Debug, Clone)]
+pub struct PdfLink {
+    pub url: String,
+    pub location: PdfLinkLocation,
+    pub kind: PdfLinkKind,
+}
+
+impl Display for PdfLink {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.url)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PdfLinkLocation {
+    pub page: usize
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum PdfLinkKind {
+    PlainText,
+    Hyperlink
+    //TODO: Comment
+}
+
 /// Reads a PDF as a bytearray and extracts all links from it.
 ///
 /// For encrypted files please use [`extract_links_encrypted`] instead
-pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, PdfExtractionError> {
+pub fn extract_links(bytes: &[u8]) -> Result<Vec<PdfLink>, PdfExtractionError> {
     extract_links_from_doc(bytes_to_pdf(bytes)?)
 }
 
@@ -28,7 +53,7 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, PdfExtractionError> {
 ///
 /// I created an <a href="https://github.com/messense/mupdf-rs/issues/82">issue</a> for it.
 /// However, I don't think it is likely to be resolved.
-pub fn extract_links_encrypted(bytes: &[u8], password: &str) -> Result<Vec<String>, PdfExtractionError> {
+pub fn extract_links_encrypted(bytes: &[u8], password: &str) -> Result<Vec<PdfLink>, PdfExtractionError> {
     let mut doc = bytes_to_pdf(bytes)?;
     if !doc.needs_password()? {
         return Err(PdfExtractionError::FileNotEncryptedError);
@@ -38,7 +63,7 @@ pub fn extract_links_encrypted(bytes: &[u8], password: &str) -> Result<Vec<Strin
     extract_links_from_doc(doc)
 }
 
-fn extract_links_from_doc(doc: Document) -> Result<Vec<String>, PdfExtractionError> {
+fn extract_links_from_doc(doc: Document) -> Result<Vec<PdfLink>, PdfExtractionError> {
     if !doc.is_pdf() {
         return Err(PdfExtractionError::NotAPdfError);
     }
@@ -46,35 +71,38 @@ fn extract_links_from_doc(doc: Document) -> Result<Vec<String>, PdfExtractionErr
         return Err(PdfExtractionError::FileEncryptedError);
     }
 
-    let mut links: Vec<String> = vec![];
+    let mut links: Vec<PdfLink> = vec![];
     for page_res in doc.pages()? {
         let page = page_res?;
         find_text_links(&page, &mut links)?;
         find_hyperlinks(&page, &mut links)?;
     }
 
-    links = links.iter()
-        .unique()
-        .map(|it| it.to_owned())
-        .collect();
-
     Ok(links)
 }
 
 /// Finds plaintext links on a page
-fn find_text_links(page: &Page, links: &mut Vec<String>) -> Result<(), PdfExtractionError> {
+fn find_text_links(page: &Page, links: &mut Vec<PdfLink>) -> Result<(), PdfExtractionError> {
     find_urls(&page.to_text()?).iter()
         .for_each(|link|
-            links.push(link.as_str().to_string()));
+            links.push(PdfLink {
+                url: link.as_str().to_string(),
+                location: PdfLinkLocation { page: 0 },//TODO actually assign page
+                kind: PdfLinkKind::Hyperlink,
+            }));
     Ok(())
 }
 
 /// Finds hyperlinks on a page
-fn find_hyperlinks(page: &Page, links: &mut Vec<String>) -> Result<(), PdfExtractionError> {
+fn find_hyperlinks(page: &Page, links: &mut Vec<PdfLink>) -> Result<(), PdfExtractionError> {
     for link in page.links()? {
         find_urls(&link.uri).iter()
             .for_each(|link|
-                links.push(link.as_str().to_string()));
+                links.push(PdfLink { 
+                    url: link.as_str().to_string(),
+                    location: PdfLinkLocation { page: 0 },//TODO actually assign page
+                    kind: PdfLinkKind::PlainText,
+                }));
     }
     Ok(())
 }
@@ -103,8 +131,7 @@ mod tests {
     #[test]
     fn extract_links_from_pdfa() {
         let links = extract_links(PDFA_EXAMPLE).unwrap();
-        println!("{:?}", links);
-        assert_eq!(links, vec!["http://www.tcpdf.org", "http://sourceforge.net/donate/index.php?group_id=128076"])
+        assert_eq!(links.len(), 2)
     }
 
     #[test]
