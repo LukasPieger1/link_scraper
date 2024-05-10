@@ -42,7 +42,7 @@ pub enum LinkExtractionError {
 pub enum Link {
     StringLink(String),
     #[cfg(feature = "text_file")]
-    TextFileLink(String),
+    TextFileLink(crate::formats::text_file::TextFileLink),
     #[cfg(feature = "odf")]
     OdfLink(crate::formats::odf::OdfLink),
     #[cfg(feature = "ooxml")]
