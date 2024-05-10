@@ -72,35 +72,37 @@ fn extract_links_from_doc(doc: Document) -> Result<Vec<PdfLink>, PdfExtractionEr
     }
 
     let mut links: Vec<PdfLink> = vec![];
+    let mut page_number = 1;
     for page_res in doc.pages()? {
         let page = page_res?;
-        find_text_links(&page, &mut links)?;
-        find_hyperlinks(&page, &mut links)?;
+        find_text_links(&page, page_number, &mut links)?;
+        find_hyperlinks(&page, page_number, &mut links)?;
+        page_number += 1
     }
 
     Ok(links)
 }
 
 /// Finds plaintext links on a page
-fn find_text_links(page: &Page, links: &mut Vec<PdfLink>) -> Result<(), PdfExtractionError> {
+fn find_text_links(page: &Page, page_number: usize, links: &mut Vec<PdfLink>) -> Result<(), PdfExtractionError> {
     find_urls(&page.to_text()?).iter()
         .for_each(|link|
             links.push(PdfLink {
                 url: link.as_str().to_string(),
-                location: PdfLinkLocation { page: 0 },//TODO actually assign page
+                location: PdfLinkLocation { page: page_number },
                 kind: PdfLinkKind::Hyperlink,
             }));
     Ok(())
 }
 
 /// Finds hyperlinks on a page
-fn find_hyperlinks(page: &Page, links: &mut Vec<PdfLink>) -> Result<(), PdfExtractionError> {
+fn find_hyperlinks(page: &Page, page_number: usize, links: &mut Vec<PdfLink>) -> Result<(), PdfExtractionError> {
     for link in page.links()? {
         find_urls(&link.uri).iter()
             .for_each(|link|
                 links.push(PdfLink { 
                     url: link.as_str().to_string(),
-                    location: PdfLinkLocation { page: 0 },//TODO actually assign page
+                    location: PdfLinkLocation { page: page_number },
                     kind: PdfLinkKind::PlainText,
                 }));
     }
@@ -125,24 +127,28 @@ mod tests {
     #[test]
     fn extract_lots_of_links_from_pdf() {
         let links = extract_links(BIG_PDF).unwrap();
-        assert_eq!(38, links.len())
+        println!("{:?}", links);
+        assert_eq!(88, links.len())
     }
 
     #[test]
     fn extract_links_from_pdfa() {
         let links = extract_links(PDFA_EXAMPLE).unwrap();
-        assert_eq!(links.len(), 2)
+        println!("{:?}", links);
+        assert_eq!(links.len(), 8)
     }
 
     #[test]
     fn fail_on_encrypted_without_pw() {
         let links = extract_links(BIG_PDF_ENCRYPTED);
+        println!("{:?}", links);
         assert!(links.is_err())
     }
 
     #[test]
     fn fail_on_decrypting_non_encrypted_file() {
         let links = extract_links_encrypted(BIG_PDF, "asdfasdf");
+        println!("{:?}", links);
         assert!(links.is_err())
     }
 
