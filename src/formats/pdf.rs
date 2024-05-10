@@ -38,7 +38,6 @@ pub struct PdfLinkLocation {
 pub enum PdfLinkKind {
     PlainText,
     Hyperlink
-    //TODO: Comment
 }
 
 /// Reads a PDF as a bytearray and extracts all links from it.

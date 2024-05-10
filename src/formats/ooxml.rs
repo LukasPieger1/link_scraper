@@ -5,7 +5,7 @@ use thiserror::Error;
 use xml::common::{Position, TextPosition};
 use xml::EventReader;
 use xml::reader::XmlEvent;
-use crate::formats::ooxml::OoxmlLinkKind::Hyperlink;
+use crate::formats::ooxml::OoxmlLinkKind::{Comment, Hyperlink};
 use crate::link_extractor::find_urls;
 
 #[derive(Error, Debug)]
@@ -40,8 +40,8 @@ pub struct OoxmlLinkLocation {
 #[derive(Debug, Clone, Copy)]
 pub enum OoxmlLinkKind {
     PlainText,
-    Hyperlink
-    //TODO: Comment
+    Hyperlink,
+    Comment
 }
 
 /// Extracts all links from a given ooxml-file
@@ -114,7 +114,7 @@ fn extract_links_from_xml_file(data: impl Read, file_name: &str, collector: &mut
             find_urls(&text).iter().for_each(|link| collector.push(OoxmlLink {
                 url: link.as_str().to_string(),
                 location: OoxmlLinkLocation { file: file_name.to_string(), position: parser.position()},
-                kind: Hyperlink
+                kind: if file_name == "word/comments.xml" { Comment } else { Hyperlink }
             }));
         }
 
@@ -136,6 +136,7 @@ mod tests {
     #[test]
     pub fn docx_extraction_test() {
         let links = extract_links(TEST_DOCX).unwrap();
+        println!("{:?}", links);
         assert_eq!(links.len(), 5);
     }
 
