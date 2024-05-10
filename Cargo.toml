@@ -14,8 +14,6 @@ thiserror = "1.0.58"
 anyhow = "1.0.81"
 lazy_static = "1.4.0"
 regex = { version = "1.10.4", optional = true }
-reqwest = { version = "0.12.2", features = ["blocking"], optional = true }
-http = { version = "1.0.0", optional = true }
 linkify = { version = "0.10.0", optional = true }
 mupdf = { version = "0.4.2", optional = true }
 zip = { version = "0.6.6", optional = true }
@@ -28,7 +26,6 @@ default = ["generic_file", "link_extraction"]
 link_extraction = ["dep:linkify"]
 regex_extraction = ["dep:regex"]
 pdf = ["dep:mupdf"]
-websites = ["dep:reqwest", "dep:http"]
 text_file = []
 xml = ["dep:xml-rs"]
 xlink = ["dep:xml-rs"]

@@ -55,7 +55,7 @@ mod tests {
 
     const TEST_XML: &[u8] = include_bytes!("../../test_files/xml/test.xml");
     #[test]
-    fn get_some_website() {
+    fn text_file_test() {
         let links = extract_links(TEST_XML).unwrap();
         println!("{:?}", links);
         assert_eq!(links.len(), 1)
