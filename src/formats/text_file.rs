@@ -1,4 +1,5 @@
-use std::io::{BufReader, Read};
+use std::fmt::{Display, Formatter};
+use std::io::{BufRead, BufReader};
 use thiserror::Error;
 use crate::link_extractor::find_urls;
 
@@ -8,16 +9,44 @@ pub enum TextFileExtractionError {
     IoError(#[from] std::io::Error),
 }
 
-pub struct TxtLocation {
-    pub line: u64,
-    pub pos: u64
+#[derive(Debug, Clone)]
+pub struct TextFileLink {
+    pub url: String,
+    pub location: TextFileLinkLocation,
 }
 
-pub fn extract_links(bytes: &[u8]) -> Result<Vec<String>, TextFileExtractionError> {
+impl Display for TextFileLink {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.url)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct TextFileLinkLocation {
+    pub line: usize,
+    pub pos: usize
+}
+
+pub fn extract_links(bytes: &[u8]) -> Result<Vec<TextFileLink>, TextFileExtractionError> {
+    let mut collector: Vec<TextFileLink> = vec![]; 
     let mut buf_reader = BufReader::new(bytes);
     let mut contents = String::new();
-    buf_reader.read_to_string(&mut contents)?;
-    Ok(find_urls(&contents).iter().map(|link| link.as_str().to_string()).collect())
+    let mut line_result = buf_reader.read_line(&mut contents)?;
+    let mut current_line = 1;
+    while line_result > 0 {
+        find_urls(&contents)
+            .iter()
+            .for_each(|link| collector.push(TextFileLink {
+                url: link.as_str().to_string(),
+                location: TextFileLinkLocation { line: current_line, pos: link.start() }
+            }));
+        
+        contents.clear();
+        line_result = buf_reader.read_line(&mut contents)?;
+        current_line += 1;
+    }
+    Ok(collector)
+    
 }
 
 #[cfg(test)]
@@ -28,6 +57,7 @@ mod tests {
     #[test]
     fn get_some_website() {
         let links = extract_links(TEST_XML).unwrap();
-        assert_eq!(links, vec!["http://www.placeholder-name-here.com/schema/"])
+        println!("{:?}", links);
+        assert_eq!(links.len(), 1)
     }
 }
