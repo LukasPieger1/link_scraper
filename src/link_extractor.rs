@@ -28,8 +28,7 @@ pub(crate) fn unique_and_sort<T:Hash + Ord>(arr: &[T]) -> Vec<&T> {
         .collect::<Vec<_>>()
 }
 
-// TODO check Xlink xml-schema standard -> wplink /DTD <- main next feature
+// TODO wplink /DTD <- main next feature
 // TODO for DTD check nom parser
-// TODO Optional filename for format-recognition
 // TODO SVG-format
 // TODO metadaten für jpg/mp3/...
