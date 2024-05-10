@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 use thiserror::Error;
 use xml::attribute::OwnedAttribute;
 use xml::common::{Position, TextPosition};
@@ -8,7 +9,7 @@ use xml::reader::XmlEvent;
 use crate::link_extractor::find_urls;
 
 #[derive(Error, Debug)]
-pub enum XmlError {
+pub enum XmlExtractionError {
     #[error(transparent)]
     XmlReaderError(#[from] xml::reader::Error)
 }
@@ -21,13 +22,20 @@ pub enum XmlLinkType {
     Attribute(OwnedAttribute),
     Comment,
     PlainText,
+    NameSpace(String),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct XmlLink {
     pub url: String,
     pub location: TextPosition,
     pub kind: XmlLinkType
+}
+
+impl Display for XmlLink {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.url)
+    }
 }
 
 pub struct XmlStartElement<'a> {
@@ -36,8 +44,21 @@ pub struct XmlStartElement<'a> {
     _namespace: &'a Namespace
 }
 
+#[derive(Debug, Clone)]
+struct NamespaceOccurrence {
+    namespace: String,
+    namespace_uri: String,
+    first_occurrence: TextPosition
+}
+
+impl PartialEq for NamespaceOccurrence {
+    fn eq(&self, other: &Self) -> bool {
+        self.namespace_uri == other.namespace_uri && self.namespace == other.namespace
+    }
+}
+
 /// Extracts all links from href-attributes regardless of their namespace or tag-name
-pub fn extract_links_from_href_tags(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlError> {
+pub fn extract_links_from_href_tags(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlExtractionError> {
     let mut collector: Vec<XmlLink> = vec![];
 
     let mut parser = EventReader::new(bytes);
@@ -65,13 +86,19 @@ pub fn extract_links_from_href_tags(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlErr
 }
 
 /// Extracts links from any file with a xml-schema
-pub fn extract_links(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlError> {
+pub fn extract_links(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlExtractionError> {
     let mut collector: Vec<XmlLink> = vec![];
+    let mut namespaces: Vec<NamespaceOccurrence> = vec![];
     
     let mut parser = EventReader::new(bytes);
     while let Ok(xml_event) = &parser.next() {
         match xml_event {
-            XmlEvent::StartElement { name: _name, attributes, namespace: _namespace } => {
+            XmlEvent::StartElement { name: _name, attributes, namespace } => {
+                namespace.0.iter().for_each(|(ns_name, ns_ref)| {
+                    let ns_occurence = NamespaceOccurrence {
+                        namespace: ns_name.to_string(), namespace_uri: ns_ref.to_string(), first_occurrence: parser.position() };
+                    if !&namespaces.contains(&ns_occurence) { namespaces.push(ns_occurence); }
+                });
                 collector.append(&mut from_xml_start_element_attributes(&attributes, &parser)?)
             }
             XmlEvent::Comment(comment) => {
@@ -100,11 +127,21 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlError> {
             _ => {}
         }
     }
+
+    namespaces.into_iter().for_each(|NamespaceOccurrence{namespace, namespace_uri, first_occurrence }| {
+        if find_urls(&namespace_uri).len() == 0 { return }
+
+        collector.push(XmlLink {
+            url: namespace_uri,
+            location: first_occurrence,
+            kind: XmlLinkType::NameSpace(namespace)
+        })
+    });
     
     Ok(collector)
 }
 
-fn from_xml_start_element_attributes(attributes: &Vec<OwnedAttribute>, parser: &EventReader<&[u8]>) -> Result<Vec<XmlLink>, XmlError> {
+fn from_xml_start_element_attributes(attributes: &Vec<OwnedAttribute>, parser: &EventReader<&[u8]>) -> Result<Vec<XmlLink>, XmlExtractionError> {
     let mut ret: Vec<XmlLink> = vec![];
     for attribute in attributes {
         let mut links = find_urls(&attribute.value)
@@ -136,6 +173,6 @@ mod tests {
     fn extract_all() {
         let links = extract_links(TEST_XLINK).unwrap();
         println!("{:?}", links);
-        assert_eq!(3, links.len())
+        assert_eq!(6, links.len())
     }
 }
