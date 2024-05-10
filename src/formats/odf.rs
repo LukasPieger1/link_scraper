@@ -41,7 +41,6 @@ pub struct OdfLinkLocation {
 pub enum OdfLinkKind {
     PlainText,
     Hyperlink
-    //TODO: Comment
 }
 
 /// Extracts all links from a given ooxml-file
