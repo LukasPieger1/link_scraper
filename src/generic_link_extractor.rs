@@ -8,6 +8,10 @@ pub enum LinkExtractionError {
     #[error(transparent)]
     IoError(#[from] std::io::Error),
 
+    #[cfg(feature = "xml")]
+    #[error(transparent)]
+    XmlExtractionError(#[from] crate::formats::xml::XmlExtractionError),
+
     #[cfg(feature = "ooxml")]
     #[error(transparent)]
     OoxmlExtractionError(#[from] crate::formats::ooxml::OoxmlExtractionError),
@@ -43,6 +47,8 @@ pub enum Link {
     StringLink(String),
     #[cfg(feature = "text_file")]
     TextFileLink(crate::formats::text_file::TextFileLink),
+    #[cfg(feature = "xml")]
+    XmlLink(crate::formats::xml::XmlLink),
     #[cfg(feature = "odf")]
     OdfLink(crate::formats::odf::OdfLink),
     #[cfg(feature = "ooxml")]
@@ -59,6 +65,8 @@ impl Display for Link {
             Link::StringLink(link) => {write!(f, "StringLink({})", link)}
             #[cfg(feature = "text_file")]
             Link::TextFileLink(link) => {write!(f, "TextFileLink({})", link)}
+            #[cfg(feature = "xml")]
+            Link::XmlLink(link) => {write!(f, "XmlLink({})", link)}
             #[cfg(feature = "odf")]
             Link::OdfLink(link) => {write!(f, "OdfLink({})", link)}
             #[cfg(feature = "ooxml")]
@@ -90,10 +98,11 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<Link>, LinkExtractionError>{
         "application/pdf" => Ok(try_pdf(bytes)?),
         "application/rtf" => Ok(try_rtf(bytes)?),
 
+        "text/xml" => Ok(try_xml(bytes)?),
+        "text/html" => Ok(try_xml(bytes)?),
+
         "text/plain" => Ok(try_text_file(bytes)?),
-        "text/xml" => Ok(try_text_file(bytes)?),
         "text/csv" => Ok(try_text_file(bytes)?),
-        "text/html" => Ok(try_text_file(bytes)?),
         "text/css" => Ok(try_text_file(bytes)?),
         "application/json" => Ok(try_text_file(bytes)?),
         _ => Err(LinkExtractionError::FileTypeNotImplemented(file_type.mime_type().to_string()))
@@ -113,6 +122,14 @@ fn try_zip(bytes: &[u8]) -> Result<Vec<Link>, LinkExtractionError> {
     }
 
     return ret;
+}
+
+
+fn try_xml(bytes: &[u8]) -> Result<Vec<Link>, LinkExtractionError> {
+    #[cfg(feature = "xml")]
+    return Ok(crate::formats::xml::extract_links(bytes)?.into_iter().map(|link| Link::XmlLink(link)).collect());
+    #[cfg(not(feature = "xml"))]
+    return Err(LinkExtractionError::FeatureNotEnabledError("text-document detected, but cannot parse it because `text_file`-feature is not enabled. Please enable it in your dependencies.".to_string()))
 }
 
 fn try_text_file(bytes: &[u8]) -> Result<Vec<Link>, LinkExtractionError> {
@@ -188,7 +205,7 @@ mod tests {
         fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
             write!(f, "[")?;
             for link in &self.0 {
-                write!(f, "{}", link)?;
+                write!(f, "{}, ", link)?;
             }
             write!(f, "]")
         }
