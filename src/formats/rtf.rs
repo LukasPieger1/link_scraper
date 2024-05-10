@@ -22,8 +22,6 @@ pub enum RtfExtractionError {
 #[derive(Debug, Clone)]
 pub struct RtfLink {
     pub url: String,
-    pub location: usize,
-    //TODO make location more useful
 }
 
 impl Display for RtfLink {
@@ -45,7 +43,6 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<RtfLink>, RtfExtractionError> {
     tokens.iter().for_each(|token| if let Token::PlainText(pt) = token {text += pt; text += " "});
     Ok(find_urls(&text).iter().map(|link| RtfLink {
         url: link.as_str().to_string(),
-        location: link.start()
     }).collect_vec())
 }
 
