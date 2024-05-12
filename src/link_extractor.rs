@@ -32,3 +32,6 @@ pub(crate) fn unique_and_sort<T:Hash + Ord>(arr: &[T]) -> Vec<&T> {
 // TODO for DTD check nom parser
 // TODO SVG-format
 // TODO metadaten für jpg/mp3/...
+// TODO more doc
+// TODO Readme
+// TODO rename project "link_scraper"
