@@ -30,8 +30,8 @@ pub(crate) fn unique_and_sort<T:Hash + Ord>(arr: &[T]) -> Vec<&T> {
 
 // TODO wplink /DTD <- main next feature
 // TODO for DTD check nom parser
-// TODO SVG-format
 // TODO metadaten für jpg/mp3/...
 // TODO more doc
 // TODO Readme
 // TODO rename project "link_scraper"
+// TODO refactor ooxml & odf to use xml-sturcture?
