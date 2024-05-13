@@ -16,13 +16,20 @@ pub enum XmlExtractionError {
 
 #[cfg(feature = "xlink")]
 pub mod xlink;
+pub mod svg;
 
 #[derive(Debug, Clone)]
 pub enum XmlLinkType {
     Attribute(OwnedAttribute),
     Comment,
-    PlainText,
+    PlainText(ParentInformation),
+    CData(ParentInformation),
     NameSpace(String),
+}
+
+#[derive(Debug, Clone)]
+pub struct ParentInformation {
+    pub parent_tag_name: Option<OwnedName>,
 }
 
 #[derive(Debug, Clone)]
@@ -89,16 +96,18 @@ pub fn extract_links_from_href_tags(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlExt
 pub fn extract_links(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlExtractionError> {
     let mut collector: Vec<XmlLink> = vec![];
     let mut namespaces: Vec<NamespaceOccurrence> = vec![];
-    
+
+    let mut current_parent: Option<OwnedName> = None;
     let mut parser = EventReader::new(bytes);
     while let Ok(xml_event) = &parser.next() {
         match xml_event {
-            XmlEvent::StartElement { name: _name, attributes, namespace } => {
+            XmlEvent::StartElement { name, attributes, namespace } => {
                 namespace.0.iter().for_each(|(ns_name, ns_ref)| {
                     let ns_occurence = NamespaceOccurrence {
                         namespace: ns_name.to_string(), namespace_uri: ns_ref.to_string(), first_occurrence: parser.position() };
                     if !&namespaces.contains(&ns_occurence) { namespaces.push(ns_occurence); }
                 });
+                current_parent = Some(name.clone());
                 collector.append(&mut from_xml_start_element_attributes(&attributes, &parser)?)
             }
             XmlEvent::Comment(comment) => {
@@ -118,7 +127,22 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlExtractionError> {
                     .map(|link| XmlLink {
                         url: link.as_str().to_string(),
                         location: parser.position(),
-                        kind: XmlLinkType::PlainText,
+                        kind: XmlLinkType::PlainText(ParentInformation {
+                            parent_tag_name: current_parent.clone()
+                        }),
+                    })
+                    .collect()
+                )
+            }
+            XmlEvent::CData(chars) => {
+                collector.append(&mut find_urls(chars)
+                    .iter()
+                    .map(|link| XmlLink {
+                        url: link.as_str().to_string(),
+                        location: parser.position(),
+                        kind: XmlLinkType::CData(ParentInformation {
+                            parent_tag_name: current_parent.clone()
+                        }),
                     })
                     .collect()
                 )
