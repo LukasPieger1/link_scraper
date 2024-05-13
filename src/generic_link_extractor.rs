@@ -12,6 +12,10 @@ pub enum LinkExtractionError {
     #[error(transparent)]
     XmlExtractionError(#[from] crate::formats::xml::XmlExtractionError),
 
+    #[cfg(feature = "svg")]
+    #[error(transparent)]
+    SvgExtractionError(#[from] crate::formats::xml::svg::SvgExtractionError),
+
     #[cfg(feature = "ooxml")]
     #[error(transparent)]
     OoxmlExtractionError(#[from] crate::formats::ooxml::OoxmlExtractionError),
@@ -49,6 +53,8 @@ pub enum Link {
     TextFileLink(crate::formats::text_file::TextFileLink),
     #[cfg(feature = "xml")]
     XmlLink(crate::formats::xml::XmlLink),
+    #[cfg(feature = "svg")]
+    SvgLink(crate::formats::xml::svg::SvgLink),
     #[cfg(feature = "odf")]
     OdfLink(crate::formats::odf::OdfLink),
     #[cfg(feature = "ooxml")]
@@ -67,6 +73,8 @@ impl Display for Link {
             Link::TextFileLink(link) => {write!(f, "TextFileLink({})", link)}
             #[cfg(feature = "xml")]
             Link::XmlLink(link) => {write!(f, "XmlLink({})", link)}
+            #[cfg(feature = "svg")]
+            Link::SvgLink(link) => {write!(f, "SvgLink({})", link)}
             #[cfg(feature = "odf")]
             Link::OdfLink(link) => {write!(f, "OdfLink({})", link)}
             #[cfg(feature = "ooxml")]
@@ -87,6 +95,7 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<Link>, LinkExtractionError>{
         return Ok(find_urls(&read_to_string(bytes)?).iter().map(|link| Link::StringLink(link.as_str().to_string())).collect());
     }
     let file_type = file_type.unwrap();
+    println!("{}", file_type);
 
     match file_type.mime_type() {
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" => Ok(try_ooxml(bytes)?),
@@ -98,6 +107,7 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<Link>, LinkExtractionError>{
         "application/pdf" => Ok(try_pdf(bytes)?),
         "application/rtf" => Ok(try_rtf(bytes)?),
 
+        "image/svg+xml" => Ok(try_svg(bytes)?),
         "text/xml" => Ok(try_xml(bytes)?),
         "text/html" => Ok(try_xml(bytes)?),
 
@@ -131,6 +141,14 @@ fn try_xml(bytes: &[u8]) -> Result<Vec<Link>, LinkExtractionError> {
     #[cfg(not(feature = "xml"))]
     return Err(LinkExtractionError::FeatureNotEnabledError("text-document detected, but cannot parse it because `text_file`-feature is not enabled. Please enable it in your dependencies.".to_string()))
 }
+
+fn try_svg(bytes: &[u8]) -> Result<Vec<Link>, LinkExtractionError> {
+    #[cfg(feature = "svg")]
+    return Ok(crate::formats::xml::svg::extract_links(bytes)?.into_iter().map(|link| Link::SvgLink(link)).collect());
+    #[cfg(not(feature = "svg"))]
+    return Err(LinkExtractionError::FeatureNotEnabledError("text-document detected, but cannot parse it because `text_file`-feature is not enabled. Please enable it in your dependencies.".to_string()))
+}
+
 
 fn try_text_file(bytes: &[u8]) -> Result<Vec<Link>, LinkExtractionError> {
     #[cfg(feature = "text_file")]
@@ -182,6 +200,7 @@ mod tests {
     const TEST_PDF: &[u8] = include_bytes!("../test_files/pdf/test.pdf");
     const TEST_RTF: &[u8] = include_bytes!("../test_files/rtf/test.rtf");
     const TEST_XML: &[u8] = include_bytes!("../test_files/xml/test.xml");
+    const TEST_SVG: &[u8] = include_bytes!("../test_files/svg/test.svg");
 
     #[test]
     fn generic_extraction_test() {
@@ -196,6 +215,7 @@ mod tests {
         println!("{}", LinkVec(extract_links(TEST_PDF).unwrap()));
         println!("{}", LinkVec(extract_links(TEST_RTF).unwrap()));
         println!("{}", LinkVec(extract_links(TEST_XML).unwrap()));
+        println!("{}", LinkVec(extract_links(TEST_SVG).unwrap()));
     }
 
 
@@ -211,3 +231,5 @@ mod tests {
         }
     }
 }
+
+// TODO sort the files the same way everywhere.
