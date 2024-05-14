@@ -1,12 +1,12 @@
 use std::io::{Cursor, Read};
 use itertools::Itertools;
 use zip::result::ZipError;
-use crate::link_extractor::find_urls;
+use crate::link_scraper::find_urls;
 
-/// Extracts all links from a given compressed file.
+/// Scrapes all links from a given compressed file.
 ///
-/// To avoid getting urls related to the ooxml-functionalities use [`extract_links`] instead.
-pub(crate) fn extract_links_unfiltered(bytes: &[u8]) -> Result<Vec<String>, ZipError> {
+/// To avoid getting urls related to the ooxml-functionalities use [`scrape`] instead.
+pub(crate) fn scrape_unfiltered(bytes: &[u8]) -> Result<Vec<String>, ZipError> {
     let cur = Cursor::new(bytes);
     let mut archive = zip::ZipArchive::new(cur)?;
 

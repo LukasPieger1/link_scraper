@@ -2,10 +2,10 @@ use std::fmt::{Display, Formatter};
 use std::io::{BufRead, BufReader};
 use thiserror::Error;
 use crate::gen_scrape_from_file;
-use crate::link_extractor::find_urls;
+use crate::link_scraper::find_urls;
 
 #[derive(Error, Debug)]
-pub enum TextFileExtractionError {
+pub enum TextFileScrapingError {
     #[error(transparent)]
     IoError(#[from] std::io::Error),
 }
@@ -28,7 +28,7 @@ pub struct TextFileLinkLocation {
     pub pos: usize
 }
 
-pub fn extract_links(bytes: &[u8]) -> Result<Vec<TextFileLink>, TextFileExtractionError> {
+pub fn scrape(bytes: &[u8]) -> Result<Vec<TextFileLink>, TextFileScrapingError> {
     let mut collector: Vec<TextFileLink> = vec![]; 
     let mut buf_reader = BufReader::new(bytes);
     let mut contents = String::new();
@@ -48,7 +48,7 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<TextFileLink>, TextFileExtracti
     }
     Ok(collector)
 }
-gen_scrape_from_file!(Result<Vec<TextFileLink>, TextFileExtractionError>);
+gen_scrape_from_file!(Result<Vec<TextFileLink>, TextFileScrapingError>);
 
 #[cfg(test)]
 mod tests {
@@ -56,13 +56,13 @@ mod tests {
 
     const TEST_XML: &[u8] = include_bytes!("../../test_files/xml/test.xml");
     #[test]
-    fn text_file_test() {
-        let links = extract_links(TEST_XML).unwrap();
+    fn scrape_text_file_test() {
+        let links = scrape(TEST_XML).unwrap();
         println!("{:?}", links);
         assert_eq!(links.len(), 1)
     }
     #[test]
-    fn text_file_test_from_file() {
+    fn scrape_text_file_from_file_test() {
         let links = scrape_from_file(Path::new("./test_files/xml/test.xml")).unwrap();
         println!("{:?}", links);
         assert_eq!(links.len(), 1)

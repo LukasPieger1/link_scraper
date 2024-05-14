@@ -1,5 +1,4 @@
-#[cfg(feature = "link_extraction")]
-pub mod link_extractor;
+pub mod link_scraper;
 pub mod formats;
-#[cfg(all(feature = "link_extraction", feature = "generic_file"))]
-pub mod generic_link_extractor;
+#[cfg(feature = "any_format")]
+pub mod any_format_scraper;

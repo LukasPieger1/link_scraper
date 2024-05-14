@@ -4,11 +4,12 @@ use xml::attribute::OwnedAttribute;
 use xml::common::TextPosition;
 use crate::formats::xml::svg::SvgLinkType::{Attribute, Comment, NameSpace, Script, Text};
 use crate::formats::xml::XmlLinkType;
+use crate::gen_scrape_from_file;
 
 #[derive(Error, Debug)]
-pub enum SvgExtractionError {
+pub enum SvgScrapingError {
     #[error(transparent)]
-    XmlExtractionError(#[from] crate::formats::xml::XmlExtractionError),
+    XmlScrapingError(#[from] crate::formats::xml::XmlScrapingError),
 }
 
 #[derive(Debug, Clone)]
@@ -39,8 +40,8 @@ pub struct SvgLinkLocation {
     pub position: TextPosition,
 }
 
-pub fn extract_links(bytes: &[u8]) -> Result<Vec<SvgLink>, SvgExtractionError> {
-    Ok(crate::formats::xml::extract_links(bytes)?
+pub fn scrape(bytes: &[u8]) -> Result<Vec<SvgLink>, SvgScrapingError> {
+    Ok(crate::formats::xml::scrape(bytes)?
         .into_iter()
         .map(|link| SvgLink {
             url: link.url,
@@ -55,6 +56,7 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<SvgLink>, SvgExtractionError> {
         })
         .collect())
 }
+gen_scrape_from_file!(Result<Vec<SvgLink>, SvgScrapingError>);
 
 #[cfg(test)]
 mod tests {
@@ -62,8 +64,8 @@ mod tests {
 
     const TEST_SVG: &[u8] = include_bytes!("../../../test_files/svg/test.svg");
     #[test]
-    fn extract_links_from_svg() {
-        let links = extract_links(TEST_SVG).unwrap();
+    fn scrape_svg_test() {
+        let links = scrape(TEST_SVG).unwrap();
         println!("{:?}", links);
         assert_eq!(links.len(), 10)
     }

@@ -1,15 +1,16 @@
 use std::fmt::{Display, Formatter};
-use std::io::{Cursor, Read};
+use std::io::{Cursor};
 use itertools::Itertools;
 use thiserror::Error;
 use xml::common::{Position, TextPosition};
 use xml::EventReader;
 use xml::reader::XmlEvent;
 use crate::formats::odf::OdfLinkKind::{Hyperlink, PlainText};
-use crate::link_extractor::find_urls;
+use crate::gen_scrape_from_file;
+use crate::link_scraper::find_urls;
 
 #[derive(Error, Debug)]
-pub enum OdfExtractionError {
+pub enum OdfScrapingError {
     #[error(transparent)]
     IoError(#[from] std::io::Error),
     #[error(transparent)]
@@ -43,11 +44,11 @@ pub enum OdfLinkKind {
     Hyperlink
 }
 
-/// Extracts all links from a given ooxml-file
+/// Scrapes all links from a given ooxml-file
 ///
 /// Tries to filter out urls related to ooxml-functionalities, but might be a bit too aggressive at times
-/// if there are links missing from the output, use [`extract_links_unfiltered`]
-pub fn extract_links(bytes: &[u8]) -> Result<Vec<OdfLink>, OdfExtractionError> {
+/// if there are links missing from the output, use [`scrape_unfiltered`]
+pub fn scrape(bytes: &[u8]) -> Result<Vec<OdfLink>, OdfScrapingError> {
     let cur = Cursor::new(bytes);
     let mut archive = zip::ZipArchive::new(cur)?;
 
@@ -60,26 +61,27 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<OdfLink>, OdfExtractionError> {
         }
 
         if file_name.ends_with(".xml") {
-            extract_links_from_xml_file(file_content.as_slice(), &file_name, &mut links)?
+            scrape_from_xml_file(file_content.as_slice(), &file_name, &mut links)?
         }
     }
 
     Ok(links)
 }
+gen_scrape_from_file!(Result<Vec<OdfLink>, OdfScrapingError>);
 
-/// Extracts all links from a given odf file.
+/// Scrapes all links from a given odf file.
 ///
-/// To avoid getting urls related to odf-functionalities use [`crate::formats::ooxml::extract_links`] instead.
-pub fn extract_links_unfiltered(bytes: &[u8]) -> Result<Vec<String>, OdfExtractionError> {
-    crate::formats::compressed_formats_common::extract_links_unfiltered(bytes)
-        .map_err(|e| OdfExtractionError::from(e))
+/// To avoid getting urls related to odf-functionalities use [`crate::formats::ooxml::scrape`] instead.
+pub fn scrape_unfiltered(bytes: &[u8]) -> Result<Vec<String>, OdfScrapingError> {
+    crate::formats::compressed_formats_common::scrape_unfiltered(bytes)
+        .map_err(|e| OdfScrapingError::from(e))
 }
 
-/// Extracts links from given .xml file-text
+/// Scrapes links from given .xml file-text
 ///
 /// All tags and tag-attributes are omitted to filter out functional urls.
 /// This might be too aggressive in some cases though
-fn extract_links_from_xml_file(data: impl Read, filename: &str, collector: &mut Vec<OdfLink>) -> Result<(), OdfExtractionError> {
+fn scrape_from_xml_file(data: impl Read, filename: &str, collector: &mut Vec<OdfLink>) -> Result<(), OdfScrapingError> {
     let mut parser = EventReader::new(data);
 
     while let Ok(xml_event) = &parser.next() {
@@ -120,20 +122,18 @@ fn extract_links_from_xml_file(data: impl Read, filename: &str, collector: &mut 
 mod tests {
     use super::*;
     use std::include_bytes;
-    use crate::link_extractor::{unique_and_sort};
 
     const TEST_ODT: &[u8] = include_bytes!("../../test_files/odt/test.odt");
 
     #[test]
-    pub fn docx_extraction_test() {
-        let links = extract_links(TEST_ODT).unwrap();
+    pub fn scrape_docx_test() {
+        let links = scrape(TEST_ODT).unwrap();
         println!("{:?}", links)
     }
 
     #[test]
-    pub fn unfiltered_extraction_test() {
-        let links = extract_links_unfiltered(TEST_ODT).unwrap();
-        let links = unique_and_sort(&links);
-        assert_eq!(links.len(), 28);
+    pub fn scrape_unfiltered_test() {
+        let links = scrape_unfiltered(TEST_ODT).unwrap();
+        assert_eq!(links.len(), 84);
     }
 }

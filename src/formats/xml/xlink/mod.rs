@@ -9,7 +9,8 @@ use xml::reader::XmlEvent;
 use crate::formats::xml::xlink::elements::{XlinkElement, XlinkExtendedElement, XlinkSimpleElement};
 use crate::formats::xml::xlink::XLinkFormatError::{ArcOutsideOfExtendedError, ExtendedInsideOfExtendedError, LocatorOutsideOfExtendedError, ResourceOutsideOfExtendedError, SimpleInsideOfExtendedError};
 use crate::formats::xml::XmlStartElement;
-use crate::link_extractor::find_urls;
+use crate::gen_scrape_from_file;
+use crate::link_scraper::find_urls;
 
 #[derive(Error, Debug)]
 pub enum XLinkFormatError {
@@ -55,14 +56,14 @@ pub enum XLinkLinkType {
 
 static XLINK_NAMESPACE: &str = "http://www.w3.org/1999/xlink";
 
-pub fn extract_links(bytes: &[u8]) -> Result<Vec<XLinkLink>, XLinkFormatError> {
+pub fn scrape(bytes: &[u8]) -> Result<Vec<XLinkLink>, XLinkFormatError> {
     let mut collector: Vec<XLinkLink> = vec![];
     
     let mut parser = EventReader::new(bytes);
     while let Ok(xml_event) = &parser.next() {
         match xml_event {
             XmlEvent::StartElement { name, attributes, namespace } => { 
-                let mut list = from_start_element(XmlStartElement { name, attributes, _namespace: namespace }, &mut parser)?;
+                let mut list = scrape_from_start_element(XmlStartElement { name, attributes, _namespace: namespace }, &mut parser)?;
                 collector.append(&mut list)
             }
             XmlEvent::EndDocument => break,
@@ -72,14 +73,15 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<XLinkLink>, XLinkFormatError> {
 
     Ok(collector)
 }
+gen_scrape_from_file!(Result<Vec<XLinkLink>, XLinkFormatError>);
 
-fn from_start_element(xml_start_element: XmlStartElement, mut parser: &mut EventReader<&[u8]>) -> Result<Vec<XLinkLink>, XLinkFormatError> {
+fn scrape_from_start_element(xml_start_element: XmlStartElement, mut parser: &mut EventReader<&[u8]>) -> Result<Vec<XLinkLink>, XLinkFormatError> {
     let Some(xlink_element) = XlinkElement::try_from_xml_start_element(xml_start_element)?
     else { return Ok(vec![]) };
 
     match xlink_element {
-        XlinkElement::Simple(element) => Ok(from_xlink_simple(element, &parser)),
-        XlinkElement::Extended(element) => from_xlink_extended(element, &mut parser),
+        XlinkElement::Simple(element) => Ok(scrape_from_xlink_simple(element, &parser)),
+        XlinkElement::Extended(element) => scrape_from_xlink_extended(element, &mut parser),
         XlinkElement::Locator(_) => Err(LocatorOutsideOfExtendedError),
         XlinkElement::Arc(_) => Err(ArcOutsideOfExtendedError),
         XlinkElement::Resource(_) => Err(ResourceOutsideOfExtendedError),
@@ -87,7 +89,7 @@ fn from_start_element(xml_start_element: XmlStartElement, mut parser: &mut Event
     }
 }
 
-fn links_from_option_string(role: Option<String>, link_type: XLinkLinkType, position: TextPosition) -> Vec<XLinkLink> {
+fn scrape_from_option_string(role: Option<String>, link_type: XLinkLinkType, position: TextPosition) -> Vec<XLinkLink> {
     let Some(role) = role
         else { return vec![] };
     let links = find_urls(&role).iter()
@@ -99,8 +101,8 @@ fn links_from_option_string(role: Option<String>, link_type: XLinkLinkType, posi
     links
 }
 
-fn from_xlink_extended(xlink_extended_element: XlinkExtendedElement, parser: &mut EventReader<&[u8]>) -> Result<Vec<XLinkLink>, XLinkFormatError> {
-    let mut ret: Vec<XLinkLink> = links_from_option_string(xlink_extended_element.role, XLinkLinkType::Role, parser.position());
+fn scrape_from_xlink_extended(xlink_extended_element: XlinkExtendedElement, parser: &mut EventReader<&[u8]>) -> Result<Vec<XLinkLink>, XLinkFormatError> {
+    let mut ret: Vec<XLinkLink> = scrape_from_option_string(xlink_extended_element.role, XLinkLinkType::Role, parser.position());
 
     while let Ok(xml_event) = &parser.next() {
         let mut links = match xml_event {
@@ -120,15 +122,15 @@ fn from_xlink_extended(xlink_extended_element: XlinkExtendedElement, parser: &mu
                             location: parser.position(),
                             kind: XLinkLinkType::External
                         });
-                        locator_links.append(&mut links_from_option_string(element.role, XLinkLinkType::Role, parser.position()));
+                        locator_links.append(&mut scrape_from_option_string(element.role, XLinkLinkType::Role, parser.position()));
                         
                         Ok(locator_links)
                     }
                     XlinkElement::Arc(element) => {
-                        Ok(links_from_option_string(element.arcrole, XLinkLinkType::ArcRole, parser.position()))
+                        Ok(scrape_from_option_string(element.arcrole, XLinkLinkType::ArcRole, parser.position()))
                     },
                     XlinkElement::Resource(element) => {
-                        Ok(links_from_option_string(element.role, XLinkLinkType::Role, parser.position()))
+                        Ok(scrape_from_option_string(element.role, XLinkLinkType::Role, parser.position()))
                     },
                     XlinkElement::Title(_) => Ok(vec![])
                 }?
@@ -146,10 +148,10 @@ fn from_xlink_extended(xlink_extended_element: XlinkExtendedElement, parser: &mu
     Ok(ret)
 }
 
-fn from_xlink_simple(xlink_element: XlinkSimpleElement, parser: &EventReader<&[u8]>) -> Vec<XLinkLink> {
-    let mut ret = links_from_option_string(xlink_element.href, XLinkLinkType::Simple, parser.position());
-    ret.append(&mut links_from_option_string(xlink_element.arcrole, XLinkLinkType::ArcRole, parser.position()));
-    ret.append(&mut links_from_option_string(xlink_element.role, XLinkLinkType::Role, parser.position()));
+fn scrape_from_xlink_simple(xlink_element: XlinkSimpleElement, parser: &EventReader<&[u8]>) -> Vec<XLinkLink> {
+    let mut ret = scrape_from_option_string(xlink_element.href, XLinkLinkType::Simple, parser.position());
+    ret.append(&mut scrape_from_option_string(xlink_element.arcrole, XLinkLinkType::ArcRole, parser.position()));
+    ret.append(&mut scrape_from_option_string(xlink_element.role, XLinkLinkType::Role, parser.position()));
     ret
 }
 
@@ -160,8 +162,8 @@ mod tests {
     const TEST_XLINK: &[u8] = include_bytes!("../../../../test_files/xml/xlink_test.xml");
 
     #[test]
-    fn extract_lots_of_links_from_xlink() {
-        let links = extract_links(TEST_XLINK).unwrap();
+    fn scrape_xlink_test() {
+        let links = scrape(TEST_XLINK).unwrap();
         println!("{:?}", links);
         assert_eq!(2, links.len())
     }
