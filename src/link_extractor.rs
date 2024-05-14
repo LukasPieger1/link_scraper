@@ -28,6 +28,27 @@ pub(crate) fn unique_and_sort<T:Hash + Ord>(arr: &[T]) -> Vec<&T> {
         .collect::<Vec<_>>()
 }
 
+#[macro_export] macro_rules! gen_scrape_from_file {
+    ($output_type:ty) => {
+        use std::fs::File;
+        use std::io::Read;
+        use std::path::Path;
+        use std::fs;
+        
+        pub fn scrape_from_file(path: &Path) -> $output_type {
+            let bytes: Vec<u8> = {
+                let mut f = File::open(path).expect("no file found");
+                let metadata = fs::metadata(path).expect("unable to read metadata");
+                let mut buffer = vec![0; metadata.len() as usize];
+                f.read(&mut buffer).expect("buffer overflow");
+
+                buffer
+            };
+            extract_links(&bytes)
+        }
+    }
+}
+
 // TODO DTD <- main next feature
 // TODO for DTD check nom parser
 // TODO metadaten für jpg/mp3/...
