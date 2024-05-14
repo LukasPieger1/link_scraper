@@ -41,10 +41,26 @@ pub struct SvgLink {
 
 #[derive(Debug, Clone)]
 pub enum SvgLinkType {
+    /// The link is inside a xml-attribute <br/>
+    /// Example: `<a href="https://link.example.com">`
     Attribute(OwnedAttribute),
+    /// The link is inside a xml-comment <br/>
+    /// Example: `<!--Just a comment with a link to https://link.example.com-->`
     Comment,
+    /// The link is inside a plaintext portion<br/>
+    /// Example: `<p> Just a comment with a link to https://link.example.com </p>`
     Text,
+    /// The link is inside a script portion<br/>
+    /// Example:
+    /// ```<t>
+    /// <script type="text/ecmascript">
+    ///     <![CDATA[
+    ///         var scriptLink = "https://link.example.com";
+    ///     ]]>
+    /// </script>```
     Script,
+    /// This link is a reference to a xml-namespace<br/>
+    /// Example: `<root xmlns="https://link.example.com">`
     NameSpace(String),
 }
 
