@@ -5,8 +5,18 @@ use mupdf::{Document, Page};
 use crate::gen_scrape_from_file;
 use crate::link_scraper::find_urls;
 
+/// Reads a PDF as a bytearray and scrapes all links from it.
+///
+/// For encrypted files please use [`scrape_encrypted`] instead
+pub fn scrape(bytes: &[u8]) -> Result<Vec<PdfLink>, PdfScrapingError> {
+    scrape_from_doc(bytes_to_pdf(bytes)?)
+}
+gen_scrape_from_file!(Result<Vec<PdfLink>, PdfScrapingError>);
+
 #[derive(Error, Debug)]
 pub enum PdfScrapingError {
+    #[error(transparent)]
+    IoError(#[from] std::io::Error),
     #[error(transparent)]
     MuPdfError(#[from] mupdf::Error),
     #[error("The file was encrypted, but no password was given.")]
@@ -40,14 +50,6 @@ pub enum PdfLinkKind {
     PlainText,
     Hyperlink
 }
-
-/// Reads a PDF as a bytearray and scrapes all links from it.
-///
-/// For encrypted files please use [`scrape_encrypted`] instead
-pub fn scrape(bytes: &[u8]) -> Result<Vec<PdfLink>, PdfScrapingError> {
-    scrape_from_doc(bytes_to_pdf(bytes)?)
-}
-gen_scrape_from_file!(Result<Vec<PdfLink>, PdfScrapingError>);
 
 /// Like [`scrape`] for encrypted files.
 /// Currently not working. Probably because of a bug in the mupdf package.

@@ -6,8 +6,28 @@ use crate::formats::xml::svg::SvgLinkType::{Attribute, Comment, NameSpace, Scrip
 use crate::formats::xml::XmlLinkType;
 use crate::gen_scrape_from_file;
 
+pub fn scrape(bytes: &[u8]) -> Result<Vec<SvgLink>, SvgScrapingError> {
+    Ok(crate::formats::xml::scrape(bytes)?
+        .into_iter()
+        .map(|link| SvgLink {
+            url: link.url,
+            location: link.location,
+            kind: match link.kind {
+                XmlLinkType::Attribute(attribute) => {Attribute(attribute)}
+                XmlLinkType::Comment => {Comment}
+                XmlLinkType::PlainText(_) => {Text}
+                XmlLinkType::CData(_) => {Script}
+                XmlLinkType::NameSpace(ns) => {NameSpace(ns)}
+            },
+        })
+        .collect())
+}
+gen_scrape_from_file!(Result<Vec<SvgLink>, SvgScrapingError>);
+
 #[derive(Error, Debug)]
 pub enum SvgScrapingError {
+    #[error(transparent)]
+    IoError(#[from] std::io::Error),
     #[error(transparent)]
     XmlScrapingError(#[from] crate::formats::xml::XmlScrapingError),
 }
@@ -39,24 +59,6 @@ pub struct SvgLinkLocation {
     pub file: String,
     pub position: TextPosition,
 }
-
-pub fn scrape(bytes: &[u8]) -> Result<Vec<SvgLink>, SvgScrapingError> {
-    Ok(crate::formats::xml::scrape(bytes)?
-        .into_iter()
-        .map(|link| SvgLink {
-            url: link.url,
-            location: link.location,
-            kind: match link.kind {
-                XmlLinkType::Attribute(attribute) => {Attribute(attribute)}
-                XmlLinkType::Comment => {Comment}
-                XmlLinkType::PlainText(_) => {Text}
-                XmlLinkType::CData(_) => {Script}
-                XmlLinkType::NameSpace(ns) => {NameSpace(ns)}
-            },
-        })
-        .collect())
-}
-gen_scrape_from_file!(Result<Vec<SvgLink>, SvgScrapingError>);
 
 #[cfg(test)]
 mod tests {

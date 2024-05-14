@@ -9,6 +9,33 @@ use crate::formats::ooxml::OoxmlLinkKind::{Comment, Hyperlink};
 use crate::gen_scrape_from_file;
 use crate::link_scraper::find_urls;
 
+/// Scrapes all links from a given ooxml-file
+///
+/// Tries to filter out urls related to ooxml-functionalities, but might be a bit too aggressive at times
+/// if there are links missing from the output, use [`scrape_unfiltered`]
+pub fn scrape(bytes: &[u8]) -> Result<Vec<OoxmlLink>, OoxmlScrapingError> {
+    let cur = Cursor::new(bytes);
+    let mut archive = zip::ZipArchive::new(cur)?;
+
+    let mut links: Vec<OoxmlLink> = vec![];
+    for file_name in archive.file_names().map(|name| name.to_owned()).collect_vec() {
+        let mut file_content = vec![];
+        archive.by_name(&file_name)?.read_to_end(&mut file_content)?;
+        if file_content.is_empty() {
+            continue;
+        }
+
+        if file_name.ends_with(".rels") {
+            scrape_from_rels_file(file_content.as_slice(), &file_name, &mut links)?
+        } else if file_name.ends_with(".xml") {
+            scrape_from_xml_file(file_content.as_slice(), &file_name, &mut links)?
+        }
+    }
+
+    Ok(links)
+}
+gen_scrape_from_file!(Result<Vec<OoxmlLink>, OoxmlScrapingError>);
+
 #[derive(Error, Debug)]
 pub enum OoxmlScrapingError {
     #[error(transparent)]
@@ -44,33 +71,6 @@ pub enum OoxmlLinkKind {
     Hyperlink,
     Comment
 }
-
-/// Scrapes all links from a given ooxml-file
-///
-/// Tries to filter out urls related to ooxml-functionalities, but might be a bit too aggressive at times
-/// if there are links missing from the output, use [`scrape_unfiltered`]
-pub fn scrape(bytes: &[u8]) -> Result<Vec<OoxmlLink>, OoxmlScrapingError> {
-    let cur = Cursor::new(bytes);
-    let mut archive = zip::ZipArchive::new(cur)?;
-
-    let mut links: Vec<OoxmlLink> = vec![];
-    for file_name in archive.file_names().map(|name| name.to_owned()).collect_vec() {
-        let mut file_content = vec![];
-        archive.by_name(&file_name)?.read_to_end(&mut file_content)?;
-        if file_content.is_empty() {
-            continue;
-        }
-
-        if file_name.ends_with(".rels") {
-            scrape_from_rels_file(file_content.as_slice(), &file_name, &mut links)?
-        } else if file_name.ends_with(".xml") {
-            scrape_from_xml_file(file_content.as_slice(), &file_name, &mut links)?
-        }
-    }
-    
-    Ok(links)
-}
-gen_scrape_from_file!(Result<Vec<OoxmlLink>, OoxmlScrapingError>);
 
 /// Scrapes all links from a given ooxml file.
 ///

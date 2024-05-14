@@ -24,10 +24,11 @@ pub fn find_urls(content: &str) -> Vec<linkify::Link> {
         use std::path::Path;
         use std::fs;
 
+        /// Convenience function, that reads a file and uses [`scrape`] to scrape links from its content.
         pub fn scrape_from_file(path: &Path) -> $output_type {
             let bytes: Vec<u8> = {
-                let mut f = File::open(path).expect("no file found");
-                let metadata = fs::metadata(path).expect("unable to read metadata");
+                let mut f = File::open(path)?;
+                let metadata = fs::metadata(path)?;
                 let mut buffer = vec![0; metadata.len() as usize];
                 f.read(&mut buffer).expect("buffer overflow");
 

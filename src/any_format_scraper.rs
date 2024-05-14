@@ -4,6 +4,39 @@ use thiserror::Error;
 use crate::gen_scrape_from_file;
 use crate::link_scraper::find_urls;
 
+/// Guesses the file-type and scrapes links from the file.
+pub fn scrape(bytes: &[u8]) -> Result<Vec<Link>, LinkScrapingError> {
+    let file_type = infer::get(&bytes);
+
+    if file_type == None {
+        return Ok(find_urls(&read_to_string(bytes)?).iter().map(|link| Link::StringLink(link.as_str().to_string())).collect());
+    }
+    let file_type = file_type.unwrap();
+    println!("{}", file_type);
+
+    match file_type.mime_type() {
+        "text/plain" => Ok(try_text_file(bytes)?),
+        "text/csv" => Ok(try_text_file(bytes)?),
+        "text/css" => Ok(try_text_file(bytes)?),
+        "application/json" => Ok(try_text_file(bytes)?),
+
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" => Ok(try_ooxml(bytes)?),
+        "application/vnd.oasis.opendocument.text" => Ok(try_odf(bytes)?),
+        "application/vnd.oasis.opendocument.spreadsheet" => Ok(try_odf(bytes)?),
+        "application/vnd.oasis.opendocument.template" => Ok(try_odf(bytes)?),
+        "application/vnd.oasis.opendocument.presentation" => Ok(try_odf(bytes)?),
+        "application/zip" => try_zip(bytes),
+        "application/pdf" => Ok(try_pdf(bytes)?),
+        "application/rtf" => Ok(try_rtf(bytes)?),
+
+        "image/svg+xml" => Ok(try_svg(bytes)?),
+        "text/xml" => Ok(try_xml(bytes)?),
+        "text/html" => Ok(try_xml(bytes)?),
+        _ => Err(LinkScrapingError::FileTypeNotImplemented(file_type.mime_type().to_string()))
+    }
+}
+gen_scrape_from_file!(Result<Vec<Link>, LinkScrapingError>);
+
 #[derive(Error, Debug)]
 pub enum LinkScrapingError {
     #[error(transparent)]
@@ -87,39 +120,6 @@ impl Display for Link {
         }
     }
 }
-
-/// Guesses the file-type and scrapes links from the file.
-pub fn scrape(bytes: &[u8]) -> Result<Vec<Link>, LinkScrapingError> {
-    let file_type = infer::get(&bytes);
-
-    if file_type == None {
-        return Ok(find_urls(&read_to_string(bytes)?).iter().map(|link| Link::StringLink(link.as_str().to_string())).collect());
-    }
-    let file_type = file_type.unwrap();
-    println!("{}", file_type);
-
-    match file_type.mime_type() {
-        "text/plain" => Ok(try_text_file(bytes)?),
-        "text/csv" => Ok(try_text_file(bytes)?),
-        "text/css" => Ok(try_text_file(bytes)?),
-        "application/json" => Ok(try_text_file(bytes)?),
-        
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" => Ok(try_ooxml(bytes)?),
-        "application/vnd.oasis.opendocument.text" => Ok(try_odf(bytes)?),
-        "application/vnd.oasis.opendocument.spreadsheet" => Ok(try_odf(bytes)?),
-        "application/vnd.oasis.opendocument.template" => Ok(try_odf(bytes)?),
-        "application/vnd.oasis.opendocument.presentation" => Ok(try_odf(bytes)?),
-        "application/zip" => try_zip(bytes),
-        "application/pdf" => Ok(try_pdf(bytes)?),
-        "application/rtf" => Ok(try_rtf(bytes)?),
-
-        "image/svg+xml" => Ok(try_svg(bytes)?),
-        "text/xml" => Ok(try_xml(bytes)?),
-        "text/html" => Ok(try_xml(bytes)?),
-        _ => Err(LinkScrapingError::FileTypeNotImplemented(file_type.mime_type().to_string()))
-    }
-}
-gen_scrape_from_file!(Result<Vec<Link>, LinkScrapingError>);
 
 fn try_zip(bytes: &[u8]) -> Result<Vec<Link>, LinkScrapingError> {
     #[allow(unused_assignments)]
