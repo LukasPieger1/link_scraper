@@ -557,6 +557,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "link_scraper"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "encoding_rs",
+ "infer",
+ "itertools",
+ "lazy_static",
+ "linkify",
+ "log",
+ "mupdf",
+ "rtf-parser",
+ "thiserror",
+ "xml-rs",
+ "zip",
+]
+
+[[package]]
 name = "linkify"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -981,24 +999,6 @@ name = "unicode-ident"
 version = "1.0.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3354b9ac3fae1ff6755cb6db53683adb661634f67557942dea4facebec0fee4b"
-
-[[package]]
-name = "untitled_rust_parser"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "encoding_rs",
- "infer",
- "itertools",
- "lazy_static",
- "linkify",
- "log",
- "mupdf",
- "rtf-parser",
- "thiserror",
- "xml-rs",
- "zip",
-]
 
 [[package]]
 name = "uuid"
