@@ -1,18 +1,15 @@
-use std::hash::Hash;
-
-use itertools::Itertools;
 use linkify::LinkFinder;
 use linkify::LinkKind::Url;
 
-#[cfg(feature = "generic_file")]
-pub use crate::generic_link_extractor::extract_links;
+#[cfg(feature = "any_format")]
+pub use crate::any_format_scraper::scrape;
 
 /// Finds all URLs in a given string
 /// # Example
 /// ```
-/// use crate::untitled_rust_parser::link_extractor::find_urls;
+/// use crate::untitled_rust_parser::link_scraper::find_urls;
 /// let urls = find_urls("dfjaoijewfj oijoiwfjoiwjoi j´21214https://www.google.com .äwä.f.f.wä ");
-/// assert_eq!(urls, vec!["https://www.google.com"])
+/// assert_eq!(urls.first().unwrap().as_str(), "https://www.google.com")
 /// ```
 pub fn find_urls(content: &str) -> Vec<linkify::Link> {
     LinkFinder::new().links(content)
@@ -26,7 +23,7 @@ pub fn find_urls(content: &str) -> Vec<linkify::Link> {
         use std::io::Read;
         use std::path::Path;
         use std::fs;
-        
+
         pub fn scrape_from_file(path: &Path) -> $output_type {
             let bytes: Vec<u8> = {
                 let mut f = File::open(path).expect("no file found");
@@ -36,7 +33,7 @@ pub fn find_urls(content: &str) -> Vec<linkify::Link> {
 
                 buffer
             };
-            extract_links(&bytes)
+            scrape(&bytes)
         }
     }
 }
@@ -48,4 +45,3 @@ pub fn find_urls(content: &str) -> Vec<linkify::Link> {
 // TODO Readme
 // TODO rename project "link_scraper"
 // TODO refactor ooxml & odf to use xml-sturcture?
-// TODO unify entry methods "scrape"/"scrape_file" - use macro

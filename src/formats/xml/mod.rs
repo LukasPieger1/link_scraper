@@ -6,10 +6,11 @@ use xml::EventReader;
 use xml::name::OwnedName;
 use xml::namespace::Namespace;
 use xml::reader::XmlEvent;
-use crate::link_extractor::find_urls;
+use crate::gen_scrape_from_file;
+use crate::link_scraper::find_urls;
 
 #[derive(Error, Debug)]
-pub enum XmlExtractionError {
+pub enum XmlScrapingError {
     #[error(transparent)]
     XmlReaderError(#[from] xml::reader::Error)
 }
@@ -64,15 +65,15 @@ impl PartialEq for NamespaceOccurrence {
     }
 }
 
-/// Extracts all links from href-attributes regardless of their namespace or tag-name
-pub fn extract_links_from_href_tags(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlExtractionError> {
+/// Scrapes all links from href-attributes regardless of their namespace or tag-name
+pub fn scrape_from_href_tags(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlScrapingError> {
     let mut collector: Vec<XmlLink> = vec![];
 
     let mut parser = EventReader::new(bytes);
     while let Ok(xml_event) = &parser.next() {
         match xml_event {
             XmlEvent::StartElement { name: _name, attributes, namespace: _namespace } => {
-                let mut list: Vec<XmlLink> = from_xml_start_element_attributes(attributes, &parser)?
+                let mut list: Vec<XmlLink> = scrape_from_xml_start_element_attributes(attributes, &parser)?
                     .into_iter()
                     .filter(|link| {
                     if let XmlLinkType::Attribute(att) = &link.kind {
@@ -92,8 +93,8 @@ pub fn extract_links_from_href_tags(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlExt
     Ok(collector)
 }
 
-/// Extracts links from any file with a xml-schema
-pub fn extract_links(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlExtractionError> {
+/// Scrapes links from any file with a xml-schema
+pub fn scrape(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlScrapingError> {
     let mut collector: Vec<XmlLink> = vec![];
     let mut namespaces: Vec<NamespaceOccurrence> = vec![];
 
@@ -108,7 +109,7 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlExtractionError> {
                     if !&namespaces.contains(&ns_occurence) { namespaces.push(ns_occurence); }
                 });
                 current_parent = Some(name.clone());
-                collector.append(&mut from_xml_start_element_attributes(&attributes, &parser)?)
+                collector.append(&mut scrape_from_xml_start_element_attributes(&attributes, &parser)?)
             }
             XmlEvent::Comment(comment) => {
                 collector.append(&mut find_urls(comment)
@@ -164,8 +165,9 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlExtractionError> {
     
     Ok(collector)
 }
+gen_scrape_from_file!(Result<Vec<XmlLink>, XmlScrapingError>);
 
-fn from_xml_start_element_attributes(attributes: &Vec<OwnedAttribute>, parser: &EventReader<&[u8]>) -> Result<Vec<XmlLink>, XmlExtractionError> {
+fn scrape_from_xml_start_element_attributes(attributes: &Vec<OwnedAttribute>, parser: &EventReader<&[u8]>) -> Result<Vec<XmlLink>, XmlScrapingError> {
     let mut ret: Vec<XmlLink> = vec![];
     for attribute in attributes {
         let mut links = find_urls(&attribute.value)
@@ -187,15 +189,15 @@ mod tests {
     const TEST_XLINK: &[u8] = include_bytes!("../../../test_files/xml/xlink_test.xml");
 
     #[test]
-    fn extract_hrefs() {
-        let links = extract_links_from_href_tags(TEST_XLINK).unwrap();
+    fn scrape_hrefs_test() {
+        let links = scrape_from_href_tags(TEST_XLINK).unwrap();
         println!("{:?}", links);
         assert_eq!(1, links.len())
     }
 
     #[test]
-    fn extract_all() {
-        let links = extract_links(TEST_XLINK).unwrap();
+    fn scrape_all_test() {
+        let links = scrape(TEST_XLINK).unwrap();
         println!("{:?}", links);
         assert_eq!(6, links.len())
     }

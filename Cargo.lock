@@ -994,7 +994,6 @@ dependencies = [
  "linkify",
  "log",
  "mupdf",
- "regex",
  "rtf-parser",
  "thiserror",
  "xml-rs",

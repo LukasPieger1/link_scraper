@@ -2,10 +2,11 @@ use std::fmt::{Display, Formatter};
 use std::string::String;
 use thiserror::Error;
 use mupdf::{Document, Page};
-use crate::link_extractor::find_urls;
+use crate::gen_scrape_from_file;
+use crate::link_scraper::find_urls;
 
 #[derive(Error, Debug)]
-pub enum PdfExtractionError {
+pub enum PdfScrapingError {
     #[error(transparent)]
     MuPdfError(#[from] mupdf::Error),
     #[error("The file was encrypted, but no password was given.")]
@@ -40,34 +41,35 @@ pub enum PdfLinkKind {
     Hyperlink
 }
 
-/// Reads a PDF as a bytearray and extracts all links from it.
+/// Reads a PDF as a bytearray and scrapes all links from it.
 ///
-/// For encrypted files please use [`extract_links_encrypted`] instead
-pub fn extract_links(bytes: &[u8]) -> Result<Vec<PdfLink>, PdfExtractionError> {
-    extract_links_from_doc(bytes_to_pdf(bytes)?)
+/// For encrypted files please use [`scrape_encrypted`] instead
+pub fn scrape(bytes: &[u8]) -> Result<Vec<PdfLink>, PdfScrapingError> {
+    scrape_from_doc(bytes_to_pdf(bytes)?)
 }
+gen_scrape_from_file!(Result<Vec<PdfLink>, PdfScrapingError>);
 
-/// Like [`extract_links`] for encrypted files.
+/// Like [`scrape`] for encrypted files.
 /// Currently not working. Probably because of a bug in the mupdf package.
 ///
 /// I created an <a href="https://github.com/messense/mupdf-rs/issues/82">issue</a> for it.
 /// However, I don't think it is likely to be resolved.
-pub fn extract_links_encrypted(bytes: &[u8], password: &str) -> Result<Vec<PdfLink>, PdfExtractionError> {
+pub fn scrape_encrypted(bytes: &[u8], password: &str) -> Result<Vec<PdfLink>, PdfScrapingError> {
     let mut doc = bytes_to_pdf(bytes)?;
     if !doc.needs_password()? {
-        return Err(PdfExtractionError::FileNotEncryptedError);
+        return Err(PdfScrapingError::FileNotEncryptedError);
     }
 
     doc.authenticate(password)?;
-    extract_links_from_doc(doc)
+    scrape_from_doc(doc)
 }
 
-fn extract_links_from_doc(doc: Document) -> Result<Vec<PdfLink>, PdfExtractionError> {
+fn scrape_from_doc(doc: Document) -> Result<Vec<PdfLink>, PdfScrapingError> {
     if !doc.is_pdf() {
-        return Err(PdfExtractionError::NotAPdfError);
+        return Err(PdfScrapingError::NotAPdfError);
     }
     if doc.needs_password()? {
-        return Err(PdfExtractionError::FileEncryptedError);
+        return Err(PdfScrapingError::FileEncryptedError);
     }
 
     let mut links: Vec<PdfLink> = vec![];
@@ -83,7 +85,7 @@ fn extract_links_from_doc(doc: Document) -> Result<Vec<PdfLink>, PdfExtractionEr
 }
 
 /// Finds plaintext links on a page
-fn find_text_links(page: &Page, page_number: usize, links: &mut Vec<PdfLink>) -> Result<(), PdfExtractionError> {
+fn find_text_links(page: &Page, page_number: usize, links: &mut Vec<PdfLink>) -> Result<(), PdfScrapingError> {
     find_urls(&page.to_text()?).iter()
         .for_each(|link|
             links.push(PdfLink {
@@ -95,7 +97,7 @@ fn find_text_links(page: &Page, page_number: usize, links: &mut Vec<PdfLink>) ->
 }
 
 /// Finds hyperlinks on a page
-fn find_hyperlinks(page: &Page, page_number: usize, links: &mut Vec<PdfLink>) -> Result<(), PdfExtractionError> {
+fn find_hyperlinks(page: &Page, page_number: usize, links: &mut Vec<PdfLink>) -> Result<(), PdfScrapingError> {
     for link in page.links()? {
         find_urls(&link.uri).iter()
             .for_each(|link|
@@ -108,7 +110,7 @@ fn find_hyperlinks(page: &Page, page_number: usize, links: &mut Vec<PdfLink>) ->
     Ok(())
 }
 
-fn bytes_to_pdf(bytes: &[u8]) -> Result<Document, PdfExtractionError> {
+fn bytes_to_pdf(bytes: &[u8]) -> Result<Document, PdfScrapingError> {
     Ok(Document::from_bytes(bytes, "test.pdf")?)
 }
 
@@ -124,42 +126,42 @@ mod tests {
     const BIG_PDF_ENCRYPTED: &[u8] = include_bytes!("../../test_files/pdf/test_protected.pdf"); // pass: asdfasdf
 
     #[test]
-    fn extract_lots_of_links_from_pdf() {
-        let links = extract_links(BIG_PDF).unwrap();
+    fn scrape_lots_from_pdf_test() {
+        let links = scrape(BIG_PDF).unwrap();
         println!("{:?}", links);
         assert_eq!(88, links.len())
     }
 
     #[test]
-    fn extract_links_from_pdfa() {
-        let links = extract_links(PDFA_EXAMPLE).unwrap();
+    fn scrape_pdfa_test() {
+        let links = scrape(PDFA_EXAMPLE).unwrap();
         println!("{:?}", links);
         assert_eq!(links.len(), 8)
     }
 
     #[test]
-    fn fail_on_encrypted_without_pw() {
-        let links = extract_links(BIG_PDF_ENCRYPTED);
+    fn fail_on_encrypted_without_pw_test() {
+        let links = scrape(BIG_PDF_ENCRYPTED);
         println!("{:?}", links);
         assert!(links.is_err())
     }
 
     #[test]
-    fn fail_on_decrypting_non_encrypted_file() {
-        let links = extract_links_encrypted(BIG_PDF, "asdfasdf");
+    fn fail_on_decrypting_non_encrypted_file_test() {
+        let links = scrape_encrypted(BIG_PDF, "asdfasdf");
         println!("{:?}", links);
         assert!(links.is_err())
     }
 
-    // /// Currently failing because of a mupdf bug (see [`extract_links_encrypted`])
+    // /// Currently failing because of a mupdf bug (see [`scrape_encrypted`])
     // #[test]
-    // fn extract_lots_of_links_from_encrypted_pdf() {
-    //     let links = extract_links_encrypted(BIG_PDF_ENCRYPTED, "asdfasdf").unwrap();
+    // fn scrape_lots_from_pdf_test() {
+    //     let links = scrape_encrypted(BIG_PDF_ENCRYPTED, "asdfasdf").unwrap();
     //     assert_eq!(38, links.len())
     // }
 
     #[test]
-    fn fail_on_non_pdf() {
+    fn fail_on_non_pdf_test() {
         let error = bytes_to_pdf(NOT_A_PDF);
         assert!(error.is_err())
     }

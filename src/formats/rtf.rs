@@ -1,16 +1,15 @@
 use std::fmt::{Display, Formatter};
 use std::io::read_to_string;
-
 use itertools::Itertools;
 use rtf_parser::lexer::Lexer;
 use rtf_parser::tokens::Token;
 use thiserror::Error;
 use xml::common::TextPosition;
-
-use crate::link_extractor::find_urls;
+use crate::gen_scrape_from_file;
+use crate::link_scraper::find_urls;
 
 #[derive(Error, Debug)]
-pub enum RtfExtractionError {
+pub enum RtfScrapingError {
     #[error(transparent)]
     IoError(#[from] std::io::Error),
     #[error(transparent)]
@@ -36,7 +35,7 @@ pub struct RtfLinkLocation {
     pub position: TextPosition
 }
 
-pub fn extract_links(bytes: &[u8]) -> Result<Vec<RtfLink>, RtfExtractionError> {
+pub fn scrape(bytes: &[u8]) -> Result<Vec<RtfLink>, RtfScrapingError> {
     let data = read_to_string(bytes)?;
     let tokens = Lexer::scan(&data)?;
     let mut text = String::new();
@@ -45,6 +44,7 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<RtfLink>, RtfExtractionError> {
         url: link.as_str().to_string(),
     }).collect_vec())
 }
+gen_scrape_from_file!(Result<Vec<RtfLink>, RtfScrapingError>);
 
 #[cfg(test)]
 mod tests {
@@ -52,8 +52,8 @@ mod tests {
 
     const TEST_RTF: &[u8] = include_bytes!("../../test_files/rtf/test.rtf");
     #[test]
-    fn extract_links_from_rtf() {
-        let links = extract_links(TEST_RTF).unwrap();
+    fn scrape_rtf_test() {
+        let links = scrape(TEST_RTF).unwrap();
         assert_eq!(links.len(), 4)
     }
 }
