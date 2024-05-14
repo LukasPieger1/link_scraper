@@ -1,6 +1,7 @@
 use std::fmt::{Display, Formatter};
 use std::io::{BufRead, BufReader};
 use thiserror::Error;
+use crate::gen_scrape_from_file;
 use crate::link_extractor::find_urls;
 
 #[derive(Error, Debug)]
@@ -46,8 +47,8 @@ pub fn extract_links(bytes: &[u8]) -> Result<Vec<TextFileLink>, TextFileExtracti
         current_line += 1;
     }
     Ok(collector)
-    
 }
+gen_scrape_from_file!(Result<Vec<TextFileLink>, TextFileExtractionError>);
 
 #[cfg(test)]
 mod tests {
@@ -57,6 +58,12 @@ mod tests {
     #[test]
     fn text_file_test() {
         let links = extract_links(TEST_XML).unwrap();
+        println!("{:?}", links);
+        assert_eq!(links.len(), 1)
+    }
+    #[test]
+    fn text_file_test_from_file() {
+        let links = scrape_from_file(Path::new("./test_files/xml/test.xml")).unwrap();
         println!("{:?}", links);
         assert_eq!(links.len(), 1)
     }
