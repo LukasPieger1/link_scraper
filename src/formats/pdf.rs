@@ -113,7 +113,7 @@ fn find_hyperlinks(page: &Page, page_number: usize, links: &mut Vec<PdfLink>) ->
 }
 
 fn bytes_to_pdf(bytes: &[u8]) -> Result<Document, PdfScrapingError> {
-    Ok(Document::from_bytes(bytes, "test.pdf")?)
+    Ok(Document::from_bytes(bytes, "file.pdf")?)
 }
 
 

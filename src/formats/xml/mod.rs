@@ -97,10 +97,26 @@ pub mod svg;
 
 #[derive(Debug, Clone)]
 pub enum XmlLinkType {
+    /// The link is inside a xml-attribute <br/>
+    /// Example: `<a href="https://link.example.com">`
     Attribute(OwnedAttribute),
+    /// The link is inside a xml-comment <br/>
+    /// Example: `<!--Just a comment with a link to https://link.example.com-->`
     Comment,
+    /// The link is inside a plaintext portion<br/>
+    /// Example: `<p> Just a comment with a link to https://link.example.com </p>`
     PlainText(ParentInformation),
+    /// The link is inside a CData portion<br/>
+    /// Example:
+    /// ```<t>
+    /// <script type="text/ecmascript">
+    ///     <![CDATA[
+    ///         var scriptLink = "https://link.example.com";
+    ///     ]]>
+    /// </script>```
     CData(ParentInformation),
+    /// This link is a reference to a xml-namespace<br/>
+    /// Example: `<root xmlns="https://link.example.com">`
     NameSpace(String),
 }
 

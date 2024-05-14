@@ -59,6 +59,7 @@ impl Display for OoxmlLink {
     }
 }
 
+/// This Location references the location in the unzipped ooxml file-structure.
 #[derive(Debug, Clone)]
 pub struct OoxmlLinkLocation {
     pub file: String,
@@ -67,8 +68,11 @@ pub struct OoxmlLinkLocation {
 
 #[derive(Debug, Clone, Copy)]
 pub enum OoxmlLinkKind {
+    /// The link is contained as Text inside the document
     PlainText,
+    /// The link is contained as a Hyperlink inside the document
     Hyperlink,
+    /// The link is contained as a Comment added to the document
     Comment
 }
 

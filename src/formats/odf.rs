@@ -57,6 +57,7 @@ impl Display for OdfLink {
     }
 }
 
+/// This Location references the location in the unzipped odf file-structure.
 #[derive(Debug, Clone)]
 pub struct OdfLinkLocation {
     pub file: String,
@@ -65,7 +66,9 @@ pub struct OdfLinkLocation {
 
 #[derive(Debug, Clone, Copy)]
 pub enum OdfLinkKind {
+    /// The link is contained as Text or as a Comment inside the document
     PlainText,
+    /// The link is contained as a Hyperlink inside the document
     Hyperlink
 }
 
