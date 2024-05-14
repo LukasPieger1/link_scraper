@@ -20,14 +20,6 @@ pub fn find_urls(content: &str) -> Vec<linkify::Link> {
         .collect()
 }
 
-pub(crate) fn unique_and_sort<T:Hash + Ord>(arr: &[T]) -> Vec<&T> {
-    arr
-        .into_iter()
-        .sorted()
-        .dedup()
-        .collect::<Vec<_>>()
-}
-
 #[macro_export] macro_rules! gen_scrape_from_file {
     ($output_type:ty) => {
         use std::fs::File;
