@@ -1,5 +1,5 @@
 [package]
-name = "untitled_rust_parser"
+name = "link_scraper"
 version = "0.1.0"
 edition = "2021"
 exclude = ["test_files/"]
