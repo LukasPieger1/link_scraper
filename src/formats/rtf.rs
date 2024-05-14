@@ -8,6 +8,17 @@ use xml::common::TextPosition;
 use crate::gen_scrape_from_file;
 use crate::link_scraper::find_urls;
 
+pub fn scrape(bytes: &[u8]) -> Result<Vec<RtfLink>, RtfScrapingError> {
+    let data = read_to_string(bytes)?;
+    let tokens = Lexer::scan(&data)?;
+    let mut text = String::new();
+    tokens.iter().for_each(|token| if let Token::PlainText(pt) = token {text += pt; text += " "});
+    Ok(find_urls(&text).iter().map(|link| RtfLink {
+        url: link.as_str().to_string(),
+    }).collect_vec())
+}
+gen_scrape_from_file!(Result<Vec<RtfLink>, RtfScrapingError>);
+
 #[derive(Error, Debug)]
 pub enum RtfScrapingError {
     #[error(transparent)]
@@ -34,17 +45,6 @@ pub struct RtfLinkLocation {
     pub file: String,
     pub position: TextPosition
 }
-
-pub fn scrape(bytes: &[u8]) -> Result<Vec<RtfLink>, RtfScrapingError> {
-    let data = read_to_string(bytes)?;
-    let tokens = Lexer::scan(&data)?;
-    let mut text = String::new();
-    tokens.iter().for_each(|token| if let Token::PlainText(pt) = token {text += pt; text += " "});
-    Ok(find_urls(&text).iter().map(|link| RtfLink {
-        url: link.as_str().to_string(),
-    }).collect_vec())
-}
-gen_scrape_from_file!(Result<Vec<RtfLink>, RtfScrapingError>);
 
 #[cfg(test)]
 mod tests {

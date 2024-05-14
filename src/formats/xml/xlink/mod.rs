@@ -12,8 +12,29 @@ use crate::formats::xml::XmlStartElement;
 use crate::gen_scrape_from_file;
 use crate::link_scraper::find_urls;
 
+pub fn scrape(bytes: &[u8]) -> Result<Vec<XLinkLink>, XLinkFormatError> {
+    let mut collector: Vec<XLinkLink> = vec![];
+
+    let mut parser = EventReader::new(bytes);
+    while let Ok(xml_event) = &parser.next() {
+        match xml_event {
+            XmlEvent::StartElement { name, attributes, namespace } => {
+                let mut list = scrape_from_start_element(XmlStartElement { name, attributes, _namespace: namespace }, &mut parser)?;
+                collector.append(&mut list)
+            }
+            XmlEvent::EndDocument => break,
+            _ => {}
+        }
+    }
+
+    Ok(collector)
+}
+gen_scrape_from_file!(Result<Vec<XLinkLink>, XLinkFormatError>);
+
 #[derive(Error, Debug)]
 pub enum XLinkFormatError {
+    #[error(transparent)]
+    IoError(#[from] std::io::Error),
     #[error("Unknown xlink:type value.")]
     UnknownTypeError(String),
     #[error("Xlink-element is missing a required attribute.")]
@@ -55,25 +76,6 @@ pub enum XLinkLinkType {
 }
 
 static XLINK_NAMESPACE: &str = "http://www.w3.org/1999/xlink";
-
-pub fn scrape(bytes: &[u8]) -> Result<Vec<XLinkLink>, XLinkFormatError> {
-    let mut collector: Vec<XLinkLink> = vec![];
-    
-    let mut parser = EventReader::new(bytes);
-    while let Ok(xml_event) = &parser.next() {
-        match xml_event {
-            XmlEvent::StartElement { name, attributes, namespace } => { 
-                let mut list = scrape_from_start_element(XmlStartElement { name, attributes, _namespace: namespace }, &mut parser)?;
-                collector.append(&mut list)
-            }
-            XmlEvent::EndDocument => break,
-            _ => {}
-        }
-    }
-
-    Ok(collector)
-}
-gen_scrape_from_file!(Result<Vec<XLinkLink>, XLinkFormatError>);
 
 fn scrape_from_start_element(xml_start_element: XmlStartElement, mut parser: &mut EventReader<&[u8]>) -> Result<Vec<XLinkLink>, XLinkFormatError> {
     let Some(xlink_element) = XlinkElement::try_from_xml_start_element(xml_start_element)?

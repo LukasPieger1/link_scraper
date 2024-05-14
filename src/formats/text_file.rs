@@ -4,6 +4,28 @@ use thiserror::Error;
 use crate::gen_scrape_from_file;
 use crate::link_scraper::find_urls;
 
+pub fn scrape(bytes: &[u8]) -> Result<Vec<TextFileLink>, TextFileScrapingError> {
+    let mut collector: Vec<TextFileLink> = vec![];
+    let mut buf_reader = BufReader::new(bytes);
+    let mut contents = String::new();
+    let mut line_result = buf_reader.read_line(&mut contents)?;
+    let mut current_line = 1;
+    while line_result > 0 {
+        find_urls(&contents)
+            .iter()
+            .for_each(|link| collector.push(TextFileLink {
+                url: link.as_str().to_string(),
+                location: TextFileLinkLocation { line: current_line, pos: link.start() }
+            }));
+
+        contents.clear();
+        line_result = buf_reader.read_line(&mut contents)?;
+        current_line += 1;
+    }
+    Ok(collector)
+}
+gen_scrape_from_file!(Result<Vec<TextFileLink>, TextFileScrapingError>);
+
 #[derive(Error, Debug)]
 pub enum TextFileScrapingError {
     #[error(transparent)]
@@ -27,28 +49,6 @@ pub struct TextFileLinkLocation {
     pub line: usize,
     pub pos: usize
 }
-
-pub fn scrape(bytes: &[u8]) -> Result<Vec<TextFileLink>, TextFileScrapingError> {
-    let mut collector: Vec<TextFileLink> = vec![]; 
-    let mut buf_reader = BufReader::new(bytes);
-    let mut contents = String::new();
-    let mut line_result = buf_reader.read_line(&mut contents)?;
-    let mut current_line = 1;
-    while line_result > 0 {
-        find_urls(&contents)
-            .iter()
-            .for_each(|link| collector.push(TextFileLink {
-                url: link.as_str().to_string(),
-                location: TextFileLinkLocation { line: current_line, pos: link.start() }
-            }));
-        
-        contents.clear();
-        line_result = buf_reader.read_line(&mut contents)?;
-        current_line += 1;
-    }
-    Ok(collector)
-}
-gen_scrape_from_file!(Result<Vec<TextFileLink>, TextFileScrapingError>);
 
 #[cfg(test)]
 mod tests {

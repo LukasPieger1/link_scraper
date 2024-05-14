@@ -9,6 +9,31 @@ use crate::formats::odf::OdfLinkKind::{Hyperlink, PlainText};
 use crate::gen_scrape_from_file;
 use crate::link_scraper::find_urls;
 
+/// Scrapes all links from a given ooxml-file
+///
+/// Tries to filter out urls related to ooxml-functionalities, but might be a bit too aggressive at times
+/// if there are links missing from the output, use [`scrape_unfiltered`]
+pub fn scrape(bytes: &[u8]) -> Result<Vec<OdfLink>, OdfScrapingError> {
+    let cur = Cursor::new(bytes);
+    let mut archive = zip::ZipArchive::new(cur)?;
+
+    let mut links: Vec<OdfLink> = vec![];
+    for file_name in archive.file_names().map(|name| name.to_owned()).collect_vec() {
+        let mut file_content = vec![];
+        archive.by_name(&file_name)?.read_to_end(&mut file_content)?;
+        if file_content.is_empty() {
+            continue;
+        }
+
+        if file_name.ends_with(".xml") {
+            scrape_from_xml_file(file_content.as_slice(), &file_name, &mut links)?
+        }
+    }
+
+    Ok(links)
+}
+gen_scrape_from_file!(Result<Vec<OdfLink>, OdfScrapingError>);
+
 #[derive(Error, Debug)]
 pub enum OdfScrapingError {
     #[error(transparent)]
@@ -43,31 +68,6 @@ pub enum OdfLinkKind {
     PlainText,
     Hyperlink
 }
-
-/// Scrapes all links from a given ooxml-file
-///
-/// Tries to filter out urls related to ooxml-functionalities, but might be a bit too aggressive at times
-/// if there are links missing from the output, use [`scrape_unfiltered`]
-pub fn scrape(bytes: &[u8]) -> Result<Vec<OdfLink>, OdfScrapingError> {
-    let cur = Cursor::new(bytes);
-    let mut archive = zip::ZipArchive::new(cur)?;
-
-    let mut links: Vec<OdfLink> = vec![];
-    for file_name in archive.file_names().map(|name| name.to_owned()).collect_vec() {
-        let mut file_content = vec![];
-        archive.by_name(&file_name)?.read_to_end(&mut file_content)?;
-        if file_content.is_empty() {
-            continue;
-        }
-
-        if file_name.ends_with(".xml") {
-            scrape_from_xml_file(file_content.as_slice(), &file_name, &mut links)?
-        }
-    }
-
-    Ok(links)
-}
-gen_scrape_from_file!(Result<Vec<OdfLink>, OdfScrapingError>);
 
 /// Scrapes all links from a given odf file.
 ///
