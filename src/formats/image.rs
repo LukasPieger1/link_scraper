@@ -6,7 +6,7 @@ use thiserror::Error;
 use crate::gen_scrape_from_file;
 use crate::link_scraper::find_urls;
 
-pub fn scrape(bytes: &[u8]) -> Result<Vec<ExifLink>, ExifScrapingError> {
+pub fn scrape(bytes: &[u8]) -> Result<Vec<ImageLink>, ImageScrapingError> {
     let exif_res = exif::Reader::new()
         .read_from_container(&mut Cursor::new(bytes));
 
@@ -18,7 +18,7 @@ pub fn scrape(bytes: &[u8]) -> Result<Vec<ExifLink>, ExifScrapingError> {
     Ok(exif.fields().map(|field| {
         if let Value::Ascii(_) = &field.value {
             find_urls(&field.display_value().to_string())
-                .iter().map(|link| ExifLink {
+                .iter().map(|link| ImageLink {
                 url: link.as_str().to_string(),
                 exif_field: field.tag.to_string()
             }).collect()
@@ -26,10 +26,10 @@ pub fn scrape(bytes: &[u8]) -> Result<Vec<ExifLink>, ExifScrapingError> {
     }).flatten().collect()
     )
 }
-gen_scrape_from_file!(Result<Vec<ExifLink>, ExifScrapingError>);
+gen_scrape_from_file!(Result<Vec<ImageLink>, ImageScrapingError>);
 
 #[derive(Error, Debug)]
-pub enum ExifScrapingError {
+pub enum ImageScrapingError {
     #[error(transparent)]
     IoError(#[from] std::io::Error),
     #[error(transparent)]
@@ -37,12 +37,12 @@ pub enum ExifScrapingError {
 }
 
 #[derive(Debug, Clone)]
-pub struct ExifLink {
+pub struct ImageLink {
     pub url: String,
     pub exif_field: String
 }
 
-impl Display for ExifLink {
+impl Display for ImageLink {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.url)
     }

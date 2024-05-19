@@ -12,7 +12,6 @@ pub fn scrape(bytes: &[u8]) -> Result<Vec<Link>, LinkScrapingError> {
         return Ok(find_urls(&read_to_string(bytes)?).iter().map(|link| Link::StringLink(link.as_str().to_string())).collect());
     }
     let file_type = file_type.unwrap();
-    println!("{}", file_type);
 
     match file_type.mime_type() {
         "text/plain" => Ok(try_text_file(bytes)?),
@@ -32,6 +31,13 @@ pub fn scrape(bytes: &[u8]) -> Result<Vec<Link>, LinkScrapingError> {
         "image/svg+xml" => Ok(try_svg(bytes)?),
         "text/xml" => Ok(try_xml(bytes)?),
         "text/html" => Ok(try_xml(bytes)?),
+
+        "image/jpeg" => Ok(try_image(bytes)?),
+        "image/png" => Ok(try_image(bytes)?),
+        "image/tiff" => Ok(try_image(bytes)?),
+        "image/webp" => Ok(try_image(bytes)?),
+        "image/heic" => Ok(try_image(bytes)?),
+        "image/heif" => Ok(try_image(bytes)?),
         _ => Err(LinkScrapingError::FileTypeNotImplemented(file_type.mime_type().to_string()))
     }
 }
@@ -70,6 +76,10 @@ pub enum LinkScrapingError {
     #[error(transparent)]
     SvgScrapingError(#[from] crate::formats::xml::svg::SvgScrapingError),
 
+    #[cfg(feature = "image")]
+    #[error(transparent)]
+    ImageScrapingError(#[from] crate::formats::image::ImageScrapingError),
+
     #[error("Required feature is not enabled")]
     FeatureNotEnabledError(String),
 
@@ -97,6 +107,8 @@ pub enum Link {
     XmlLink(crate::formats::xml::XmlLink),
     #[cfg(feature = "svg")]
     SvgLink(crate::formats::xml::svg::SvgLink),
+    #[cfg(feature = "image")]
+    ImageLink(crate::formats::image::ImageLink),
 }
 
 impl Display for Link {
@@ -117,6 +129,8 @@ impl Display for Link {
             Link::XmlLink(link) => {write!(f, "XmlLink({})", link)}
             #[cfg(feature = "svg")]
             Link::SvgLink(link) => {write!(f, "SvgLink({})", link)}
+            #[cfg(feature = "image")]
+            Link::ImageLink(link) => {write!(f, "ImageLink({})", link)}
         }
     }
 }
@@ -168,21 +182,28 @@ fn try_rtf(bytes: &[u8]) -> Result<Vec<Link>, LinkScrapingError> {
     #[cfg(feature = "rtf")]
     return Ok(crate::formats::rtf::scrape(bytes)?.into_iter().map(|link| Link::RtfLink(link)).collect());
     #[cfg(not(feature = "rtf"))]
-    return Err(LinkScrapingError::FeatureNotEnabledError(".rtf-document detected, but cannot parse it because `rtf`-feature is not enabled. Please enable it in your dependencies.".to_string()))
+    return Err(LinkScrapingError::FeatureNotEnabledError("RTF-document detected, but cannot parse it because `rtf`-feature is not enabled. Please enable it in your dependencies.".to_string()))
 }
 
 fn try_xml(bytes: &[u8]) -> Result<Vec<Link>, LinkScrapingError> {
     #[cfg(feature = "xml")]
     return Ok(crate::formats::xml::scrape(bytes)?.into_iter().map(|link| Link::XmlLink(link)).collect());
     #[cfg(not(feature = "xml"))]
-    return Err(LinkScrapingError::FeatureNotEnabledError("text-document detected, but cannot parse it because `text_file`-feature is not enabled. Please enable it in your dependencies.".to_string()))
+    return Err(LinkScrapingError::FeatureNotEnabledError("XML-document detected, but cannot parse it because `xml`-feature is not enabled. Please enable it in your dependencies.".to_string()))
 }
 
 fn try_svg(bytes: &[u8]) -> Result<Vec<Link>, LinkScrapingError> {
     #[cfg(feature = "svg")]
     return Ok(crate::formats::xml::svg::scrape(bytes)?.into_iter().map(|link| Link::SvgLink(link)).collect());
     #[cfg(not(feature = "svg"))]
-    return Err(LinkScrapingError::FeatureNotEnabledError("text-document detected, but cannot parse it because `text_file`-feature is not enabled. Please enable it in your dependencies.".to_string()))
+    return Err(LinkScrapingError::FeatureNotEnabledError("SVG-document detected, but cannot parse it because `svg`-feature is not enabled. Please enable it in your dependencies.".to_string()))
+}
+
+fn try_image(bytes: &[u8]) -> Result<Vec<Link>, LinkScrapingError> {
+    #[cfg(feature = "image")]
+    return Ok(crate::formats::image::scrape(bytes)?.into_iter().map(|link| Link::ImageLink(link)).collect());
+    #[cfg(not(feature = "image"))]
+    return Err(LinkScrapingError::FeatureNotEnabledError("Image detected, but cannot parse it because `image`-feature is not enabled. Please enable it in your dependencies.".to_string()))
 }
 
 #[cfg(test)]
@@ -201,6 +222,7 @@ mod tests {
     const TEST_RTF: &[u8] = include_bytes!("../test_files/rtf/test.rtf");
     const TEST_XML: &[u8] = include_bytes!("../test_files/xml/test.xml");
     const TEST_SVG: &[u8] = include_bytes!("../test_files/svg/test.svg");
+    const TEST_JPG: &[u8] = include_bytes!("../test_files/media/test.jpg");
 
     #[test]
     fn scrape_generic_file_test() {
@@ -216,6 +238,7 @@ mod tests {
         println!("{}", LinkVec(scrape(TEST_RTF).unwrap()));
         println!("{}", LinkVec(scrape(TEST_XML).unwrap()));
         println!("{}", LinkVec(scrape(TEST_SVG).unwrap()));
+        println!("{}", LinkVec(scrape(TEST_JPG).unwrap()));
     }
 
 
