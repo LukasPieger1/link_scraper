@@ -41,5 +41,4 @@ pub fn find_urls(content: &str) -> Vec<linkify::Link> {
 
 // TODO DTD <- main next feature
 // TODO for DTD check nom parser
-// TODO metadaten für jpg/mp3/...
-// TODO refactor ooxml & odf to use xml-sturcture?
+// TODO metadaten für video/audio

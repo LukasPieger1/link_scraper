@@ -19,6 +19,8 @@ zip = { version = "0.6.6", optional = true }
 xml-rs = { version = "0.8.19", optional = true }
 rtf-parser = { version = "0.2.0", optional = true }
 infer = { version = "0.15.0", optional = true }
+kamadak-exif = { version = "0.5.5", optional = true}
+
 
 [features]
 default = ["any_format", "text_file"]
@@ -30,5 +32,6 @@ svg = ["xml"]
 ooxml = ["dep:xml-rs", "dep:zip"]
 odf = ["dep:xml-rs", "dep:zip"]
 rtf = ["dep:rtf-parser"]
+image = ["dep:kamadak-exif"]
 any_format = ["dep:infer"]
 
