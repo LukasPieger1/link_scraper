@@ -24,7 +24,7 @@ So to actually use this crate you __need__ to activate at least one format-featu
  - ODT
  - OTT
  - RTF
- - XML ( And all xml-based formats, has some extra features for the following xml-based formats:)
+ - XML ( And all xml-based formats. Also has some extra features for the following xml-based formats )
    - SVG
    - XLink (There is the beginnings of an XLink-parser/validator in here. It is not this crates' purpose, but since I couldn't really find any other crate that does this, I thought I'd mention it)
  - Image formats (From exif-data)
