@@ -55,6 +55,7 @@ mod tests {
     use super::*;
 
     const TEST_XML: &[u8] = include_bytes!("../../test_files/xml/test.xml");
+
     #[test]
     fn scrape_text_file_test() {
         let links = scrape(TEST_XML).unwrap();

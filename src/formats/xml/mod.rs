@@ -17,6 +17,7 @@ pub fn scrape(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlScrapingError> {
     let mut current_parent: Option<OwnedName> = None;
     let mut parser = EventReader::new(bytes);
     while let Ok(xml_event) = &parser.next() {
+        println!("{:?}", xml_event);
         match xml_event {
             XmlEvent::StartElement { name, attributes, namespace } => {
                 namespace.0.iter().for_each(|(ns_name, ns_ref)| {
