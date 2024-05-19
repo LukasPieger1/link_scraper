@@ -27,6 +27,12 @@ So to actually use this crate you __need__ to activate at least one format-featu
  - XML ( And all xml-based formats, has some extra features for the following xml-based formats:)
    - SVG
    - XLink (There is the beginnings of an XLink-parser/validator in here. It is not this crates' purpose, but since I couldn't really find any other crate that does this, I thought I'd mention it)
+ - Image formats (From exif-data)
+   - JPG / JPEG
+   - PNG
+   - WebP
+   - TIFF
+   - HEIF
    
 ### Any format scraper
 This modules' `scrape`-function will behave nicely with most files, however its ability to recognize filetypes is 
