@@ -38,6 +38,3 @@ pub fn find_urls(content: &str) -> Vec<linkify::Link> {
         }
     }
 }
-
-// TODO DTD <- main next feature
-// TODO for DTD check nom parser
