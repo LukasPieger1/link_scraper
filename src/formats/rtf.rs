@@ -4,7 +4,6 @@ use itertools::Itertools;
 use rtf_parser::lexer::Lexer;
 use rtf_parser::tokens::Token;
 use thiserror::Error;
-use xml::common::TextPosition;
 use crate::gen_scrape_from_file;
 use crate::link_scraper::find_urls;
 
@@ -38,12 +37,6 @@ impl Display for RtfLink {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.url)
     }
-}
-
-#[derive(Debug, Clone)]
-pub struct RtfLinkLocation {
-    pub file: String,
-    pub position: TextPosition
 }
 
 #[cfg(test)]

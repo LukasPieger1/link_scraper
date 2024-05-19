@@ -12,3 +12,5 @@ pub mod odf;
 pub mod xml;
 #[cfg(any(feature = "odf", feature = "ooxml"))]
 mod compressed_formats_common;
+#[cfg(feature = "image")]
+pub mod image;
