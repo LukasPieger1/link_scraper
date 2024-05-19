@@ -17,6 +17,7 @@ pub fn scrape(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlScrapingError> {
     let mut current_parent: Option<OwnedName> = None;
     let mut parser = EventReader::new(bytes);
     while let Ok(xml_event) = &parser.next() {
+        println!("{:?}", xml_event);
         match xml_event {
             XmlEvent::StartElement { name, attributes, namespace } => {
                 namespace.0.iter().for_each(|(ns_name, ns_ref)| {
@@ -205,10 +206,19 @@ mod tests {
     use super::*;
 
     const TEST_XLINK: &[u8] = include_bytes!("../../../test_files/xml/xlink_test.xml");
+    const TEST_DTD: &[u8] = include_bytes!("../../../test_files/xml/dtd_test.xml");
+    const TEST_XML: &[u8] = include_bytes!("../../../test_files/xml/test.xml");
 
     #[test]
     fn scrape_hrefs_test() {
         let links = scrape_from_href_tags(TEST_XLINK).unwrap();
+        println!("{:?}", links);
+        assert_eq!(1, links.len())
+    }
+
+    #[test]
+    fn scrape_dtd_test() {
+        let links = scrape(TEST_DTD).unwrap();
         println!("{:?}", links);
         assert_eq!(1, links.len())
     }
