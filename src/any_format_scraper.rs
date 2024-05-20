@@ -14,30 +14,25 @@ pub fn scrape(bytes: &[u8]) -> Result<Vec<Link>, LinkScrapingError> {
     let file_type = file_type.unwrap();
 
     match file_type.mime_type() {
-        "text/plain" => Ok(try_text_file(bytes)?),
-        "text/csv" => Ok(try_text_file(bytes)?),
-        "text/css" => Ok(try_text_file(bytes)?),
-        "application/json" => Ok(try_text_file(bytes)?),
+        "text/plain" | "text/csv" | "text/css" | "application/json"
+        => Ok(try_text_file(bytes)?),
 
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" => Ok(try_ooxml(bytes)?),
-        "application/vnd.oasis.opendocument.text" => Ok(try_odf(bytes)?),
-        "application/vnd.oasis.opendocument.spreadsheet" => Ok(try_odf(bytes)?),
-        "application/vnd.oasis.opendocument.template" => Ok(try_odf(bytes)?),
-        "application/vnd.oasis.opendocument.presentation" => Ok(try_odf(bytes)?),
+        "application/vnd.oasis.opendocument.text" | "application/vnd.oasis.opendocument.spreadsheet" |
+        "application/vnd.oasis.opendocument.template" | "application/vnd.oasis.opendocument.presentation"
+        => Ok(try_odf(bytes)?),
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        => Ok(try_ooxml(bytes)?),
+
         "application/zip" => try_zip(bytes),
         "application/pdf" => Ok(try_pdf(bytes)?),
         "application/rtf" => Ok(try_rtf(bytes)?),
 
         "image/svg+xml" => Ok(try_svg(bytes)?),
-        "text/xml" => Ok(try_xml(bytes)?),
-        "text/html" => Ok(try_xml(bytes)?),
+        "text/xml" | "text/html" => Ok(try_xml(bytes)?),
 
-        "image/jpeg" => Ok(try_image(bytes)?),
-        "image/png" => Ok(try_image(bytes)?),
-        "image/tiff" => Ok(try_image(bytes)?),
-        "image/webp" => Ok(try_image(bytes)?),
-        "image/heic" => Ok(try_image(bytes)?),
-        "image/heif" => Ok(try_image(bytes)?),
+        "image/jpeg" | "image/png" | "image/tiff" | "image/webp" | "image/heic" | "image/heif"
+        => Ok(try_image(bytes)?),
+
         _ => Err(LinkScrapingError::FileTypeNotImplemented(file_type.mime_type().to_string()))
     }
 }
@@ -135,9 +130,35 @@ impl Display for Link {
     }
 }
 
+macro_rules! gen_try_format {
+    ($name:ident, $feature:literal, $module:ident, $link:ident) => {
+        fn $name(bytes: &[u8]) -> Result<Vec<Link>, LinkScrapingError> {
+            #[cfg(feature = $feature)]
+            return Ok(crate::formats::$module::scrape(bytes)?.into_iter().map(|link| Link::$link(link)).collect());
+            #[cfg(not(feature = $feature))]
+            return Err(LinkScrapingError::FeatureNotEnabledError(format!("Detected {}-file but the corresponding feature is not enabled. Please enable it in your dependencies.", stringify!($feature))));
+        }
+    }
+}
+
+gen_try_format!(try_text_file, "text_file", text_file, TextFileLink);
+gen_try_format!(try_ooxml, "ooxml", ooxml, OoxmlLink);
+gen_try_format!(try_odf, "odf", odf, OdfLink);
+gen_try_format!(try_pdf, "pdf", pdf, PdfLink);
+gen_try_format!(try_rtf, "rtf", rtf, RtfLink);
+gen_try_format!(try_xml, "xml", xml, XmlLink);
+gen_try_format!(try_image, "image", image, ImageLink);
+
+fn try_svg(bytes: &[u8]) -> Result<Vec<Link>, LinkScrapingError> {
+    #[cfg(feature = "svg")]
+    return Ok(crate::formats::xml::svg::scrape(bytes)?.into_iter().map(|link| Link::SvgLink(link)).collect());
+    #[cfg(not(feature = "svg"))]
+    return Err(LinkScrapingError::FeatureNotEnabledError(format!("Detected svg-file but the corresponding feature is not enabled. Please enable it in your dependencies.")))
+}
+
 fn try_zip(bytes: &[u8]) -> Result<Vec<Link>, LinkScrapingError> {
     #[allow(unused_assignments)]
-        let ret: Result<Vec<Link>, LinkScrapingError> = Err(LinkScrapingError::FeatureNotEnabledError("Zip-file detected. Would try to parse it with `ooxml`/`odf`-feature but none of them is enabled. Please enable it in your dependencies.".to_string()));
+        let ret: Result<Vec<Link>, LinkScrapingError> = Err(LinkScrapingError::FeatureNotEnabledError("Detected zip-file but the corresponding feature is not enabled. Please enable it in your dependencies.".to_string()));
     #[cfg(feature = "ooxml")] {
         let ooxml_result = try_ooxml(bytes).map_err(|e| LinkScrapingError::from(e));
         if let Ok(res) = ooxml_result { return Ok(res) }
@@ -148,62 +169,6 @@ fn try_zip(bytes: &[u8]) -> Result<Vec<Link>, LinkScrapingError> {
     }
 
     return ret;
-}
-
-fn try_text_file(bytes: &[u8]) -> Result<Vec<Link>, LinkScrapingError> {
-    #[cfg(feature = "text_file")]
-    return Ok(crate::formats::text_file::scrape(bytes)?.into_iter().map(|link| Link::TextFileLink(link)).collect());
-    #[cfg(not(feature = "text_file"))]
-    return Err(LinkScrapingError::FeatureNotEnabledError("text-document detected, but cannot parse it because `text_file`-feature is not enabled. Please enable it in your dependencies.".to_string()))
-}
-
-fn try_ooxml(bytes: &[u8]) -> Result<Vec<Link>, LinkScrapingError> {
-    #[cfg(feature = "ooxml")]
-    return Ok(crate::formats::ooxml::scrape(bytes)?.into_iter().map(|link| Link::OoxmlLink(link)).collect());
-    #[cfg(not(feature = "ooxml"))]
-    return Err(LinkScrapingError::FeatureNotEnabledError("Microsoft-office document detected, but cannot parse it because `ooxml`-feature is not enabled. Please enable it in your dependencies.".to_string()))
-}
-
-fn try_odf(bytes: &[u8]) -> Result<Vec<Link>, LinkScrapingError> {
-    #[cfg(feature = "odf")]
-    return Ok(crate::formats::odf::scrape(bytes)?.into_iter().map(|link| Link::OdfLink(link)).collect());
-    #[cfg(not(feature = "odf"))]
-    return Err(LinkScrapingError::FeatureNotEnabledError("OpenOffice document detected, but cannot parse it because `odf`-feature is not enabled. Please enable it in your dependencies.".to_string()))
-}
-
-fn try_pdf(bytes: &[u8]) -> Result<Vec<Link>, LinkScrapingError> {
-    #[cfg(feature = "pdf")]
-    return Ok(crate::formats::pdf::scrape(bytes)?.into_iter().map(|link| Link::PdfLink(link)).collect());
-    #[cfg(not(feature = "pdf"))]
-    return Err(LinkScrapingError::FeatureNotEnabledError("PDF-document detected, but cannot parse it because `pdf`-feature is not enabled. Please enable it in your dependencies.".to_string()))
-}
-
-fn try_rtf(bytes: &[u8]) -> Result<Vec<Link>, LinkScrapingError> {
-    #[cfg(feature = "rtf")]
-    return Ok(crate::formats::rtf::scrape(bytes)?.into_iter().map(|link| Link::RtfLink(link)).collect());
-    #[cfg(not(feature = "rtf"))]
-    return Err(LinkScrapingError::FeatureNotEnabledError("RTF-document detected, but cannot parse it because `rtf`-feature is not enabled. Please enable it in your dependencies.".to_string()))
-}
-
-fn try_xml(bytes: &[u8]) -> Result<Vec<Link>, LinkScrapingError> {
-    #[cfg(feature = "xml")]
-    return Ok(crate::formats::xml::scrape(bytes)?.into_iter().map(|link| Link::XmlLink(link)).collect());
-    #[cfg(not(feature = "xml"))]
-    return Err(LinkScrapingError::FeatureNotEnabledError("XML-document detected, but cannot parse it because `xml`-feature is not enabled. Please enable it in your dependencies.".to_string()))
-}
-
-fn try_svg(bytes: &[u8]) -> Result<Vec<Link>, LinkScrapingError> {
-    #[cfg(feature = "svg")]
-    return Ok(crate::formats::xml::svg::scrape(bytes)?.into_iter().map(|link| Link::SvgLink(link)).collect());
-    #[cfg(not(feature = "svg"))]
-    return Err(LinkScrapingError::FeatureNotEnabledError("SVG-document detected, but cannot parse it because `svg`-feature is not enabled. Please enable it in your dependencies.".to_string()))
-}
-
-fn try_image(bytes: &[u8]) -> Result<Vec<Link>, LinkScrapingError> {
-    #[cfg(feature = "image")]
-    return Ok(crate::formats::image::scrape(bytes)?.into_iter().map(|link| Link::ImageLink(link)).collect());
-    #[cfg(not(feature = "image"))]
-    return Err(LinkScrapingError::FeatureNotEnabledError("Image detected, but cannot parse it because `image`-feature is not enabled. Please enable it in your dependencies.".to_string()))
 }
 
 #[cfg(test)]
