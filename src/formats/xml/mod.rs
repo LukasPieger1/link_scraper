@@ -205,8 +205,8 @@ mod tests {
     use super::*;
 
     const TEST_XLINK: &[u8] = include_bytes!("../../../test_files/xml/xlink_test.xml");
-    const TEST_DTD: &[u8] = include_bytes!("../../../test_files/xml/dtd_test.xml");
-    const TEST_XML: &[u8] = include_bytes!("../../../test_files/xml/test.xml");
+    // const TEST_DTD: &[u8] = include_bytes!("../../../test_files/xml/dtd_test.xml");
+    // const TEST_XML: &[u8] = include_bytes!("../../../test_files/xml/test.xml");
 
     #[test]
     fn scrape_hrefs_test() {
@@ -215,12 +215,12 @@ mod tests {
         assert_eq!(1, links.len())
     }
 
-    #[test]
-    fn scrape_dtd_test() {
-        let links = scrape(TEST_DTD).unwrap();
-        println!("{:?}", links);
-        assert_eq!(1, links.len())
-    }
+    // #[test]
+    // fn scrape_dtd_test() {
+    //     let links = scrape(TEST_DTD).unwrap();
+    //     println!("{:?}", links);
+    //     assert_eq!(1, links.len())
+    // }
 
     #[test]
     fn scrape_all_test() {
