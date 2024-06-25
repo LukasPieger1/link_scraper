@@ -26,8 +26,8 @@ kamadak-exif = { version = "0.5.5", optional = true} # BSD-2-Clause
 #  ✓ ISC: libloading
 #  ✓ MIT: cfb, deflate64, dlib, freetype-sys, generic-array, infer, libredox, lzma-rs, nom, redox_syscall, redox_users, rtf-parser, simd-adler32, winnow, xml-rs, yeslogic-fontconfig-sys, zip, zstd
 #  ✓ MIT OR Unlicense: aho-corasick, byteorder, memchr, same-file, walkdir, winapi-util
-#  ~ AGPL-3.0: mupdf (I think this is fine as long as I did not modify the code itself. But I'm also no lawyer.)
-#  ~ MPL-2.0: dwrote (So theoretically this is pretty restrictive in terms of redistribution, but also I cannot find the reason this crate is even in this list. I don't seem to be using it at all....maybe its just a problem with carg license?)
+#  ~ AGPL-3.0: mupdf (I think this is fine as long as I did not modify the code itself. But I'm also no lawyer and if 'modifiing' also includes using the code for my own crate the this is probably bad and my crate needs to use this license as well.)
+#  ~ MPL-2.0: dwrote (So theoretically this is pretty restrictive in terms of redistribution, but also I cannot find the reason this crate is even in this list. I don't seem to be using it at all....maybe its just a problem with cargo license?)
 
 
 [features]
