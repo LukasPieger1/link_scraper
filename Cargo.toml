@@ -7,8 +7,6 @@ exclude = ["test_files/"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-encoding_rs = "0.8.34" # Apache-2.0, MIT, BSD-3-Clause(WHATWG)
-log = "0.4.21" # MIT or Apache-2.0
 itertools = "0.13.0" # MIT or Apache-2.0
 thiserror = "1.0.58" # MIT or Apache-2.0
 linkify = { version = "0.10.0"} # MIT or Apache-2.0
@@ -25,12 +23,11 @@ kamadak-exif = { version = "0.5.5", optional = true} # BSD-2-Clause
 #  ✓ BSD-2-Clause: kamadak-exif, mutate_once
 #  ✓ BSD-3-Clause: bindgen, subtle
 #  ✓ BSL-1.0: lockfree-object-pool
-#  ✓ ISC (Modified BSD-2-Clause): libloading
+#  ✓ ISC: libloading
 #  ✓ MIT: cfb, deflate64, dlib, freetype-sys, generic-array, infer, libredox, lzma-rs, nom, redox_syscall, redox_users, rtf-parser, simd-adler32, winnow, xml-rs, yeslogic-fontconfig-sys, zip, zstd
 #  ✓ MIT OR Unlicense: aho-corasick, byteorder, memchr, same-file, walkdir, winapi-util
-#  MPL-2.0: dwrote (So theoretically this is pretty restrictive in terms of redistribution, but also I cannot find the reason this crate is even in this list. I don't seem to be using it at all....maybe its just a problem with carg license?)
-
-
+#  ~ AGPL-3.0: mupdf (I think this is fine as long as I did not modify the code itself. But I'm also no lawyer.)
+#  ~ MPL-2.0: dwrote (So theoretically this is pretty restrictive in terms of redistribution, but also I cannot find the reason this crate is even in this list. I don't seem to be using it at all....maybe its just a problem with carg license?)
 
 
 [features]
