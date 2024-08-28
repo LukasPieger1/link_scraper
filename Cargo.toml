@@ -3,8 +3,8 @@ name = "link_scraper"
 version = "0.1.0"
 edition = "2021"
 exclude = ["test_files/"]
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+license = "AGPL-3" # I would like to use a less restrictive license, but unfortunately I cannot find an alternative to the mupdf-crate which uses the same license.
+repository = "https://github.com/LukasPieger1/link_scraper"
 
 [dependencies]
 itertools = "0.13.0" # MIT or Apache-2.0
@@ -16,19 +16,6 @@ xml-rs = { version = "0.8.20", optional = true } # MIT
 rtf-parser = { version = "0.3.0", optional = true } # MIT
 infer = { version = "0.16.0", optional = true } # MIT
 kamadak-exif = { version = "0.5.5", optional = true} # BSD-2-Clause
-
-#  Other crate-licenses:
-#  ✓ Apache-2.0 OR MIT: aes, arbitrary, bitflags, bitflags, block-buffer, bumpalo, bzip2, bzip2-sys, cc, cexpr, cfg-if, cipher, const-cstr, core-foundation, core-foundation-sys, core-graphics, core-graphics-types, core-text, cpufeatures, crc, crc-catalog, crc32fast, crossbeam-utils, crypto-common, deranged, derivative, derive_arbitrary, digest, dirs-next, dirs-sys-next, displaydoc, either, equivalent, flate2, float-ord, fnv, font-kit, foreign-types, foreign-types-shared, freetype, getrandom, glob, hashbrown, hmac, indexmap, inout, itertools, jobserver, lazy_static, lazycell, libc, linkify, log, minimal-lexical, num-conv, once_cell, pathfinder_geometry, pathfinder_simd, pbkdf2, peeking_take_while, pkg-config, powerfmt, ppv-lite86, proc-macro-crate, proc-macro2, quote, rand, rand_chacha, rand_core, regex, regex-automata, regex-syntax, rustc-hash, rustc_version, semver, serde, serde_derive, sha1, shlex, syn, syn, thiserror, thiserror-impl, time, time-core, toml_datetime, toml_edit, typenum, uuid, version_check, winapi, winapi-i686-pc-windows-gnu, winapi-x86_64-pc-windows-gnu, windows-targets, windows_aarch64_gnullvm, windows_aarch64_msvc, windows_i686_gnu, windows_i686_msvc, windows_x86_64_gnu, windows_x86_64_gnullvm, windows_x86_64_msvc, wio, zeroize, zeroize_derive, zstd-safe, zstd-sys
-#  ✓ Apache-2.0 OR MIT OR Zlib: miniz_oxide
-#  ✓ BSD-2-Clause: kamadak-exif, mutate_once
-#  ✓ BSD-3-Clause: bindgen, subtle
-#  ✓ BSL-1.0: lockfree-object-pool
-#  ✓ ISC: libloading
-#  ✓ MIT: cfb, deflate64, dlib, freetype-sys, generic-array, infer, libredox, lzma-rs, nom, redox_syscall, redox_users, rtf-parser, simd-adler32, winnow, xml-rs, yeslogic-fontconfig-sys, zip, zstd
-#  ✓ MIT OR Unlicense: aho-corasick, byteorder, memchr, same-file, walkdir, winapi-util
-#  ~ AGPL-3.0: mupdf (This is pretty awful. This means that in order to use this crate I need to use an AGPL-3.0 license for my crate as well if I redistribute or host it as a service.)
-#  ~ MPL-2.0: dwrote (So theoretically this is pretty restrictive in terms of redistribution, but also I cannot find the reason this crate is even in this list. I don't seem to be using it at all....maybe its just a problem with cargo license?)
-
 
 [features]
 default = ["any_format", "text_file"]

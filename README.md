@@ -1,4 +1,5 @@
 # Link scraper
+
 This small university-project aims to scrape links from the contents of any file.
 It also provides some extra information about the location of those links in the file,
 and what role they have.
@@ -14,6 +15,7 @@ By default, only the `any_format` feature is active, that can _not_ be used on i
 So to actually use this crate you __need__ to activate at least one format-feature.
 
 ### Supported formats
+
  - TXT 
  - PDF
  - DOCX
@@ -35,5 +37,11 @@ So to actually use this crate you __need__ to activate at least one format-featu
    - HEIF
    
 ### Any format scraper
+
 This modules' `scrape`-function will behave nicely with most files, however its ability to recognize filetypes is 
 somewhat limited, and if you know what format you're using, you should probably use the format-specific module's `scrape`-function instead.
+
+
+## License
+
+This work is released under the GPLv3 license. A copy of the license is provided in the [LICENSE](./LICENSE) file.
