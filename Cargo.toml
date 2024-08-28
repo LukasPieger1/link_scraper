@@ -8,7 +8,7 @@ license = "AGPL-3.0" # I would like to use a less restrictive license, but unfor
 description = "Scrape links from any document-file format"
 repository = "https://github.com/LukasPieger1/link_scraper"
 homepage = "https://github.com/LukasPieger1/link_scraper"
-keywords = ["link", "links", "hyperlink", "hyperlinks", "scrape", "file", "files", "txt", "pdf", "docx", "pptx", "xlsx", "odp", "ods", "ott", "rtf", "xml", "svg", "xlink", "jpg", "png", "webp", "tiff", "heif"]
+keywords = ["link", "hyperlink", "scrape", "document", "file"]
 categories = ["encoding", "filesystem", "parser-implementations", "text-processing"]
 
 [dependencies]
