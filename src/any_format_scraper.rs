@@ -168,7 +168,7 @@ fn try_zip(bytes: &[u8]) -> Result<Vec<Link>, LinkScrapingError> {
         if let Ok(res) = odf_result { return Ok(res) }
     }
 
-    return ret;
+    ret
 }
 
 #[cfg(test)]
