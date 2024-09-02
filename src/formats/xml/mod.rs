@@ -100,12 +100,15 @@ pub enum XmlLinkType {
     /// The link is inside a xml-attribute <br/>
     /// Example: `<a href="https://link.example.com">`
     Attribute(OwnedAttribute),
+
     /// The link is inside a xml-comment <br/>
     /// Example: `<!--Just a comment with a link to https://link.example.com-->`
     Comment,
+
     /// The link is inside a plaintext portion<br/>
     /// Example: `<p> Just a comment with a link to https://link.example.com </p>`
     PlainText(ParentInformation),
+
     /// The link is inside a CData portion<br/>
     /// Example:
     /// ```<t>
@@ -115,6 +118,7 @@ pub enum XmlLinkType {
     ///     ]]>
     /// </script>```
     CData(ParentInformation),
+
     /// This link is a reference to a xml-namespace<br/>
     /// Example: `<root xmlns="https://link.example.com">`
     NameSpace(String),
@@ -205,8 +209,6 @@ mod tests {
     use super::*;
 
     const TEST_XLINK: &[u8] = include_bytes!("../../../test_files/xml/xlink_test.xml");
-    // const TEST_DTD: &[u8] = include_bytes!("../../../test_files/xml/dtd_test.xml");
-    // const TEST_XML: &[u8] = include_bytes!("../../../test_files/xml/test.xml");
 
     #[test]
     fn scrape_hrefs_test() {
@@ -214,13 +216,6 @@ mod tests {
         println!("{:?}", links);
         assert_eq!(1, links.len())
     }
-
-    // #[test]
-    // fn scrape_dtd_test() {
-    //     let links = scrape(TEST_DTD).unwrap();
-    //     println!("{:?}", links);
-    //     assert_eq!(1, links.len())
-    // }
 
     #[test]
     fn scrape_all_test() {
