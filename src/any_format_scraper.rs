@@ -176,18 +176,18 @@ mod tests {
     use super::*;
     use std::include_bytes;
 
-    const TEST_DOCX: &[u8] = include_bytes!("../test_files/docx/test.docx");
-    const TEST_PPTX: &[u8] = include_bytes!("../test_files/pptx/test.pptx");
-    const TEST_XLSX: &[u8] = include_bytes!("../test_files/xlsx/test.xlsx");
-    const TEST_ODT: &[u8] = include_bytes!("../test_files/odt/test.odt");
-    const TEST_ODS: &[u8] = include_bytes!("../test_files/ods/test.ods");
-    const TEST_OTT: &[u8] = include_bytes!("../test_files/ott/test.ott");
-    const TEST_ODP: &[u8] = include_bytes!("../test_files/odp/test.odp");
-    const TEST_PDF: &[u8] = include_bytes!("../test_files/pdf/test.pdf");
-    const TEST_RTF: &[u8] = include_bytes!("../test_files/rtf/test.rtf");
-    const TEST_XML: &[u8] = include_bytes!("../test_files/xml/test.xml");
-    const TEST_SVG: &[u8] = include_bytes!("../test_files/svg/test.svg");
-    const TEST_JPG: &[u8] = include_bytes!("../test_files/media/test.jpg");
+    const TEST_DOCX: &[u8] = include_bytes!("../test_files/ooxml/docx_test.docx");
+    const TEST_PPTX: &[u8] = include_bytes!("../test_files/ooxml/pptx_test.pptx");
+    const TEST_XLSX: &[u8] = include_bytes!("../test_files/ooxml/xlsx_test.xlsx");
+    const TEST_ODT: &[u8] = include_bytes!("../test_files/odf/odt_test.odt");
+    const TEST_ODS: &[u8] = include_bytes!("../test_files/odf/ods_test.ods");
+    const TEST_ODP: &[u8] = include_bytes!("../test_files/odf/odp_test.odp");
+    const TEST_OTT: &[u8] = include_bytes!("../test_files/odf/ott_test.ott");
+    const TEST_PDF: &[u8] = include_bytes!("../test_files/pdf/pdf_test.pdf");
+    const TEST_RTF: &[u8] = include_bytes!("../test_files/rtf/rtf_test.rtf");
+    const TEST_XML: &[u8] = include_bytes!("../test_files/xml/xml_test.xml");
+    const TEST_SVG: &[u8] = include_bytes!("../test_files/xml/svg_test.svg");
+    const TEST_JPG: &[u8] = include_bytes!("../test_files/images/exif_test.jpg");
 
     #[test]
     fn scrape_generic_file_test() {

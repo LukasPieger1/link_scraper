@@ -66,7 +66,7 @@ pub struct OoxmlLinkLocation {
     pub position: TextPosition
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum OoxmlLinkKind {
     /// The link is contained as Text inside the document
     PlainText,
@@ -135,33 +135,36 @@ mod tests {
     use super::*;
     use std::include_bytes;
 
-    const TEST_DOCX: &[u8] = include_bytes!("../../test_files/docx/test.docx");
-    const TEST_PPTX: &[u8] = include_bytes!("../../test_files/pptx/test.pptx");
-    const TEST_XLSX: &[u8] = include_bytes!("../../test_files/xlsx/test.xlsx");
+    const TEST_DOCX: &[u8] = include_bytes!("../../test_files/ooxml/docx_test.docx");
+    const TEST_PPTX: &[u8] = include_bytes!("../../test_files/ooxml/pptx_test.pptx");
+    const TEST_XLSX: &[u8] = include_bytes!("../../test_files/ooxml/xlsx_test.xlsx");
 
     #[test]
     pub fn scrape_docx_test() {
         let links = scrape(TEST_DOCX).unwrap();
         println!("{:?}", links);
-        assert_eq!(links.len(), 5);
+        assert!(links.iter().any(|it| it.url == "https://hyperlink.test.com/" && it.kind == Hyperlink));
+        assert!(links.iter().any(|it| it.url == "https://comment.test.com" && it.kind == Comment));
     }
 
     #[test]
     pub fn scrape_pptx_test() {
         let links = scrape(TEST_PPTX).unwrap();
-        assert_eq!(links.len(), 3);
+        println!("{:?}", links);
+        assert!(links.iter().any(|it| it.url == "https://hyperlink.test.com/" && it.kind == Hyperlink));
     }
 
     #[test]
     pub fn scrape_xlsx_test() {
         let links = scrape(TEST_XLSX).unwrap();
-        assert_eq!(links.len(), 3);
+        println!("{:?}", links);
+        assert!(links.iter().any(|it| it.url == "https://hyperlink.test.com/" && it.kind == Hyperlink));
     }
 
     #[test]
     pub fn scrape_unfiltered_test() {
         let mut links = scrape_unfiltered(TEST_DOCX).unwrap();
         links.sort();
-        assert_eq!(links.len(), 130);
+        assert_eq!(links.len(), 50);
     }
 }

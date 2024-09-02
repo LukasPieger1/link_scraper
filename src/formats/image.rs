@@ -36,7 +36,7 @@ pub enum ImageScrapingError {
     ExifError(#[from] exif::Error),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ImageLink {
     pub url: String,
     pub exif_field: String
@@ -52,14 +52,15 @@ impl Display for ImageLink {
 mod tests {
     use super::*;
 
-    const TEST_JPG: &[u8] = include_bytes!("../../test_files/media/test.jpg");
-    const TEST_JPG_NO_EXIF: &[u8] = include_bytes!("../../test_files/media/no_exif_test.jpg");
+    const TEST_JPG: &[u8] = include_bytes!("../../test_files/images/exif_test.jpg");
+    const TEST_JPG_NO_EXIF: &[u8] = include_bytes!("../../test_files/images/no_exif_test.jpg");
 
     #[test]
     fn scrape_exif_test() {
         let links = scrape(TEST_JPG).unwrap();
         println!("{:?}", links);
-        assert_eq!(links.len(), 2)
+        assert!(links.contains(&ImageLink { url: "https://test.exifdata.com".to_string(), exif_field: "ImageDescription".to_string() }));
+        assert!(links.contains(&ImageLink { url: "https://test2.exifdata.com".to_string(), exif_field: "ImageDescription".to_string() }))
     }
 
     #[test]

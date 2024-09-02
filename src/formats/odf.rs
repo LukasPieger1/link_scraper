@@ -64,7 +64,7 @@ pub struct OdfLinkLocation {
     pub position: TextPosition
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum OdfLinkKind {
     /// The link is contained as Text or as a Comment inside the document
     PlainText,
@@ -126,17 +126,46 @@ mod tests {
     use super::*;
     use std::include_bytes;
 
-    const TEST_ODT: &[u8] = include_bytes!("../../test_files/odt/test.odt");
+    const TEST_ODT: &[u8] = include_bytes!("../../test_files/odf/odt_test.odt");
+    const TEST_ODS: &[u8] = include_bytes!("../../test_files/odf/ods_test.ods");
+    const TEST_ODP: &[u8] = include_bytes!("../../test_files/odf/odp_test.odp");
+    const TEST_OTT: &[u8] = include_bytes!("../../test_files/odf/ott_test.ott");
 
     #[test]
-    pub fn scrape_docx_test() {
+    pub fn scrape_odt_test() {
         let links = scrape(TEST_ODT).unwrap();
-        println!("{:?}", links)
+        println!("{:?}", links);
+        assert!(links.iter().any(|it| it.url == "https://plaintext.test.com" && it.kind == PlainText));
+        assert!(links.iter().any(|it| it.url == "https://hyperlink.test.com/" && it.kind == Hyperlink));
+    }
+
+    #[test]
+    pub fn scrape_ods_test() {
+        let links = scrape(TEST_ODS).unwrap();
+        println!("{:?}", links);
+        assert!(links.iter().any(|it| it.url == "https://plaintext.test.com" && it.kind == PlainText));
+        assert!(links.iter().any(|it| it.url == "https://hyperlink.test.com/" && it.kind == Hyperlink));
+    }
+
+    #[test]
+    pub fn scrape_odp_test() {
+        let links = scrape(TEST_ODP).unwrap();
+        println!("{:?}", links);
+        assert!(links.iter().any(|it| it.url == "https://plaintext.test.com" && it.kind == PlainText));
+        assert!(links.iter().any(|it| it.url == "https://hyperlink.test.com/" && it.kind == Hyperlink));
+    }
+
+    #[test]
+    pub fn scrape_ott_test() {
+        let links = scrape(TEST_OTT).unwrap();
+        println!("{:?}", links);
+        assert!(links.iter().any(|it| it.url == "https://plaintext.test.com" && it.kind == PlainText));
+        assert!(links.iter().any(|it| it.url == "https://hyperlink.test.com/" && it.kind == Hyperlink));
     }
 
     #[test]
     pub fn scrape_unfiltered_test() {
         let links = scrape_unfiltered(TEST_ODT).unwrap();
-        assert_eq!(links.len(), 84);
+        assert_eq!(links.len(), 47);
     }
 }

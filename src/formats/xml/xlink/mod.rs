@@ -67,10 +67,10 @@ pub struct XLinkLink {
     pub kind: XLinkLinkType
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub enum XLinkLinkType {
     Simple,
-    External,
+    Extended,
     Role,
     ArcRole,
 }
@@ -122,7 +122,7 @@ fn scrape_from_xlink_extended(xlink_extended_element: XlinkExtendedElement, pars
                         locator_links.push(XLinkLink {
                             url: element.href,
                             location: parser.position(),
-                            kind: XLinkLinkType::External
+                            kind: XLinkLinkType::Extended
                         });
                         locator_links.append(&mut scrape_from_option_string(element.role, XLinkLinkType::Role, parser.position()));
                         
@@ -167,6 +167,8 @@ mod tests {
     fn scrape_xlink_test() {
         let links = scrape(TEST_XLINK).unwrap();
         println!("{:?}", links);
-        assert_eq!(2, links.len())
+        assert!(links.iter().any(|it| it.url == "https://simple.test.com" && it.kind == XLinkLinkType::Simple));
+        assert!(links.iter().any(|it| it.url == "https://extended.test.com/" && it.kind == XLinkLinkType::Extended));
+        assert!(links.iter().any(|it| it.url == "https://role.test.com/" && it.kind == XLinkLinkType::Role));
     }
 }

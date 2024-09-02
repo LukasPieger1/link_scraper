@@ -43,10 +43,11 @@ impl Display for RtfLink {
 mod tests {
     use super::*;
 
-    const TEST_RTF: &[u8] = include_bytes!("../../test_files/rtf/test.rtf");
+    const TEST_RTF: &[u8] = include_bytes!("../../test_files/rtf/rtf_test.rtf");
     #[test]
     fn scrape_rtf_test() {
         let links = scrape(TEST_RTF).unwrap();
-        assert_eq!(links.len(), 4)
+        println!("{:?}", links);
+        assert!(links.iter().any(|it| it.url == "https://plaintext.test.com"));
     }
 }

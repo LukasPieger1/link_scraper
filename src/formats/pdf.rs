@@ -45,7 +45,7 @@ pub struct PdfLinkLocation {
     pub page: usize
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum PdfLinkKind {
     PlainText,
     Hyperlink
@@ -93,7 +93,7 @@ fn find_text_links(page: &Page, page_number: usize, links: &mut Vec<PdfLink>) ->
             links.push(PdfLink {
                 url: link.as_str().to_string(),
                 location: PdfLinkLocation { page: page_number },
-                kind: PdfLinkKind::Hyperlink,
+                kind: PdfLinkKind::PlainText,
             }));
     Ok(())
 }
@@ -106,7 +106,7 @@ fn find_hyperlinks(page: &Page, page_number: usize, links: &mut Vec<PdfLink>) ->
                 links.push(PdfLink { 
                     url: link.as_str().to_string(),
                     location: PdfLinkLocation { page: page_number },
-                    kind: PdfLinkKind::PlainText,
+                    kind: PdfLinkKind::Hyperlink,
                 }));
     }
     Ok(())
@@ -122,35 +122,37 @@ mod tests {
     use super::*;
     use std::include_bytes;
 
-    const NOT_A_PDF: &[u8] = include_bytes!("../../test_files/docx/test.docx");
-    const BIG_PDF: &[u8] = include_bytes!("../../test_files/pdf/test.pdf");
-    const PDFA_EXAMPLE: &[u8] = include_bytes!("../../test_files/pdf/pdfa-example.pdf");
-    const BIG_PDF_ENCRYPTED: &[u8] = include_bytes!("../../test_files/pdf/test_protected.pdf"); // pass: asdfasdf
+    const NOT_A_PDF: &[u8] = include_bytes!("../../test_files/ooxml/xlsx_test.xlsx");
+    const TEST_PDF: &[u8] = include_bytes!("../../test_files/pdf/pdf_test.pdf");
+    const TEST_PDFA: &[u8] = include_bytes!("../../test_files/pdf/pdfa_test.pdf");
+    const TEST_PDF_ENCRYPTED: &[u8] = include_bytes!("../../test_files/pdf/pdf_protected_test.pdf"); // pass: asdfasdf
 
     #[test]
-    fn scrape_lots_from_pdf_test() {
-        let links = scrape(BIG_PDF).unwrap();
+    fn scrape_pdf_test() {
+        let links = scrape(TEST_PDF).unwrap();
         println!("{:?}", links);
-        assert_eq!(88, links.len())
+        assert!(links.iter().any(|it| it.url == "https://hyperlink.test.com/" && it.kind == PdfLinkKind::Hyperlink));
+        assert!(links.iter().any(|it| it.url == "https://plaintext.test.com" && it.kind == PdfLinkKind::PlainText));
     }
 
     #[test]
     fn scrape_pdfa_test() {
-        let links = scrape(PDFA_EXAMPLE).unwrap();
+        let links = scrape(TEST_PDFA).unwrap();
         println!("{:?}", links);
-        assert_eq!(links.len(), 8)
+        assert!(links.iter().any(|it| it.url == "https://hyperlink.test.com/" && it.kind == PdfLinkKind::Hyperlink));
+        assert!(links.iter().any(|it| it.url == "https://plaintext.test.com" && it.kind == PdfLinkKind::PlainText));
     }
 
     #[test]
     fn fail_on_encrypted_without_pw_test() {
-        let links = scrape(BIG_PDF_ENCRYPTED);
+        let links = scrape(TEST_PDF_ENCRYPTED);
         println!("{:?}", links);
         assert!(links.is_err())
     }
 
     #[test]
     fn fail_on_decrypting_non_encrypted_file_test() {
-        let links = scrape_encrypted(BIG_PDF, "asdfasdf");
+        let links = scrape_encrypted(TEST_PDF, "asdfasdf");
         println!("{:?}", links);
         assert!(links.is_err())
     }

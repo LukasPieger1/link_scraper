@@ -1,0 +1,12 @@
+<root xmlns:xlink="http://www.w3.org/1999/xlink">
+    <simple xlink:type="simple" xlink:href="https://simple.test.com"/>
+    <extendend xlink:type="extended">
+        <child2 xlink:type="arc"/>
+        <child3 xlink:type="arc" xlink:from="source" xlink:to="destination" xlink:show="new" xlink:actuate="onLoad" xlink:title="Human readable title"/>
+        <child4 xlink:type="locator" xlink:href="https://extended.test.com/" xlink:role="https://role.test.com/" xlink:title="Human readable title">
+            https://plaintext.link.test
+            <child5 xlink:type="arc" xlink:from="source" xlink:to="destination" xlink:show="new" xlink:actuate="onLoad" xlink:title="Human readable title"/>
+        </child4>
+        <child6 xlink:type="arc" xlink:from="the source" xlink:to="destination" xlink:show="new" xlink:actuate="onLoad" xlink:title="Human readable title"/>
+    </extendend>
+</root>

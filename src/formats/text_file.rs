@@ -54,18 +54,16 @@ pub struct TextFileLinkLocation {
 mod tests {
     use super::*;
 
-    const TEST_XML: &[u8] = include_bytes!("../../test_files/xml/test.xml");
+    const TEST_XML: &[u8] = include_bytes!("../../test_files/xml/xml_test.xml");
 
     #[test]
-    fn scrape_text_file_test() {
+    fn scrape_test() {
         let links = scrape(TEST_XML).unwrap();
         println!("{:?}", links);
-        assert_eq!(links.len(), 1)
-    }
-    #[test]
-    fn scrape_text_file_from_file_test() {
-        let links = scrape_from_file(Path::new("./test_files/xml/test.xml")).unwrap();
-        println!("{:?}", links);
-        assert_eq!(links.len(), 1)
+        assert!(links.iter().any(|it| it.url == "https://attribute.test.com"));
+        assert!(links.iter().any(|it| it.url == "https://plaintext.test.com"));
+        assert!(links.iter().any(|it| it.url == "https://comment.test.com"));
+        assert!(links.iter().any(|it| it.url == "https://cdata.test.com"));
+        assert!(links.iter().any(|it| it.url == "https://ns.test.com"));
     }
 }

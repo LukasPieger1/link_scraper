@@ -52,12 +52,12 @@ pub enum SvgLinkType {
     Text,
     /// The link is inside a script portion<br/>
     /// Example:
-    /// ```<t>
+    /// ```text
     /// <script type="text/ecmascript">
     ///     <![CDATA[
     ///         var scriptLink = "https://link.example.com";
     ///     ]]>
-    /// </script>```
+    /// </script>
     Script,
     /// This link is a reference to a xml-namespace<br/>
     /// Example: `<root xmlns="https://link.example.com">`
@@ -80,11 +80,12 @@ pub struct SvgLinkLocation {
 mod tests {
     use super::*;
 
-    const TEST_SVG: &[u8] = include_bytes!("../../../test_files/svg/test.svg");
+    const TEST_SVG: &[u8] = include_bytes!("../../../test_files/xml/svg_test.svg");
     #[test]
     fn scrape_svg_test() {
         let links = scrape(TEST_SVG).unwrap();
         println!("{:?}", links);
-        assert_eq!(links.len(), 10)
+        assert!(links.iter().any(|it| it.url == "https://cdata.test.com/insideACodeSnippet" && matches!(it.kind, Script)));
+        assert!(links.iter().any(|it| it.url == "http://www.w3.org/2000/svg" && matches!(it.kind, NameSpace(_))));
     }
 }

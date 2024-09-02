@@ -95,7 +95,7 @@ pub enum XmlScrapingError {
 pub mod xlink;
 pub mod svg;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum XmlLinkType {
     /// The link is inside a xml-attribute <br/>
     /// Example: `<a href="https://link.example.com">`
@@ -111,12 +111,13 @@ pub enum XmlLinkType {
 
     /// The link is inside a CData portion<br/>
     /// Example:
-    /// ```<t>
+    /// ```text
     /// <script type="text/ecmascript">
     ///     <![CDATA[
     ///         var scriptLink = "https://link.example.com";
     ///     ]]>
-    /// </script>```
+    /// </script>
+    /// ```
     CData(ParentInformation),
 
     /// This link is a reference to a xml-namespace<br/>
@@ -124,7 +125,7 @@ pub enum XmlLinkType {
     NameSpace(String),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ParentInformation {
     pub parent_tag_name: Option<OwnedName>,
 }
@@ -208,19 +209,22 @@ fn scrape_from_xml_start_element_attributes(attributes: &Vec<OwnedAttribute>, pa
 mod tests {
     use super::*;
 
-    const TEST_XLINK: &[u8] = include_bytes!("../../../test_files/xml/xlink_test.xml");
+    const TEST_XML: &[u8] = include_bytes!("../../../test_files/xml/xml_test.xml");
 
     #[test]
     fn scrape_hrefs_test() {
-        let links = scrape_from_href_tags(TEST_XLINK).unwrap();
+        let links = scrape_from_href_tags(TEST_XML).unwrap();
         println!("{:?}", links);
-        assert_eq!(1, links.len())
+        assert!(links.iter().any(|it| it.url == "https://attribute.test.com" && matches!(it.kind, XmlLinkType::Attribute(_))));
     }
 
     #[test]
     fn scrape_all_test() {
-        let links = scrape(TEST_XLINK).unwrap();
+        let links = scrape(TEST_XML).unwrap();
         println!("{:?}", links);
-        assert_eq!(6, links.len())
+        assert!(links.iter().any(|it| it.url == "https://attribute.test.com" && matches!(it.kind, XmlLinkType::Attribute(_))));
+        assert!(links.iter().any(|it| it.url == "https://plaintext.test.com" && matches!(it.kind, XmlLinkType::PlainText(_))));
+        assert!(links.iter().any(|it| it.url == "https://cdata.test.com" && matches!(it.kind, XmlLinkType::CData(_))));
+        assert!(links.iter().any(|it| it.url == "http://www.w3.org/XML/1998/namespace" && matches!(it.kind, XmlLinkType::NameSpace(_))));
     }
 }
