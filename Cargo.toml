@@ -1,6 +1,6 @@
 [package]
 name = "link_scraper"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2021"
 exclude = ["test_files/"]
 readme = "README.md"
