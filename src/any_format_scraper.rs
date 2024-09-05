@@ -43,9 +43,9 @@ pub enum LinkScrapingError {
     #[error(transparent)]
     IoError(#[from] std::io::Error),
 
-    #[cfg(feature = "text_file")]
+    #[cfg(feature = "plaintext")]
     #[error(transparent)]
-    TextFileScrapingError(#[from] crate::formats::text_file::TextFileScrapingError),
+    TextFileScrapingError(#[from] crate::formats::plaintext::TextFileScrapingError),
 
     #[cfg(feature = "ooxml")]
     #[error(transparent)]
@@ -88,8 +88,8 @@ pub enum LinkScrapingError {
 #[derive(Debug, Clone)]
 pub enum Link {
     StringLink(String),
-    #[cfg(feature = "text_file")]
-    TextFileLink(crate::formats::text_file::TextFileLink),
+    #[cfg(feature = "plaintext")]
+    TextFileLink(crate::formats::plaintext::TextFileLink),
     #[cfg(feature = "odf")]
     OdfLink(crate::formats::odf::OdfLink),
     #[cfg(feature = "pdf")]
@@ -110,7 +110,7 @@ impl Display for Link {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Link::StringLink(link) => {write!(f, "StringLink({})", link)}
-            #[cfg(feature = "text_file")]
+            #[cfg(feature = "plaintext")]
             Link::TextFileLink(link) => {write!(f, "TextFileLink({})", link)}
             #[cfg(feature = "ooxml")]
             Link::OoxmlLink(link) => {write!(f, "OoxmlLink({})", link)}
@@ -141,7 +141,7 @@ macro_rules! gen_try_format {
     }
 }
 
-gen_try_format!(try_text_file, "text_file", text_file, TextFileLink);
+gen_try_format!(try_text_file, "plaintext", plaintext, TextFileLink);
 gen_try_format!(try_ooxml, "ooxml", ooxml, OoxmlLink);
 gen_try_format!(try_odf, "odf", odf, OdfLink);
 gen_try_format!(try_pdf, "pdf", pdf, PdfLink);

@@ -1,7 +1,7 @@
 #[cfg(feature = "pdf")]
 pub mod pdf;
-#[cfg(feature = "text_file")]
-pub mod text_file;
+#[cfg(feature = "plaintext")]
+pub mod plaintext;
 #[cfg(feature = "ooxml")]
 pub mod ooxml;
 #[cfg(feature = "rtf")]
