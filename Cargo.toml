@@ -6,6 +6,7 @@ exclude = ["test_files/"]
 readme = "README.md"
 license = "AGPL-3.0" # I would like to use a less restrictive license, but unfortunately I cannot find an alternative to the mupdf-crate which uses the same license.
 description = "Scrape links from any document-file format"
+
 repository = "https://github.com/LukasPieger1/link_scraper"
 homepage = "https://github.com/LukasPieger1/link_scraper"
 keywords = ["link", "hyperlink", "scrape", "document", "file"]
