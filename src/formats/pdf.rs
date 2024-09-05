@@ -27,7 +27,7 @@ pub enum PdfScrapingError {
     NotAPdfError,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PdfLink {
     pub url: String,
     pub location: PdfLinkLocation,
@@ -40,7 +40,7 @@ impl Display for PdfLink {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PdfLinkLocation {
     pub page: usize
 }

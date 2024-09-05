@@ -39,7 +39,7 @@ pub struct SvgLink {
     pub kind: SvgLinkKind,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum SvgLinkKind {
     /// The link is inside a xml-attribute <br/>
     /// Example: `<a href="https://link.example.com">`

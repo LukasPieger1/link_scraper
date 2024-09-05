@@ -44,7 +44,7 @@ pub enum OdfScrapingError {
     ZipError(#[from] zip::result::ZipError),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct OdfLink {
     pub url: String,
     pub location: OdfLinkLocation,
@@ -58,7 +58,7 @@ impl Display for OdfLink {
 }
 
 /// This Location references the location in the unzipped odf file-structure.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct OdfLinkLocation {
     pub file: String,
     pub position: TextPosition
