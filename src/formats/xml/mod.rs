@@ -33,7 +33,7 @@ pub fn scrape(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlScrapingError> {
                     .map(|link| XmlLink {
                         url: link.as_str().to_string(),
                         location: parser.position(),
-                        kind: XmlLinkType::Comment,
+                        kind: XmlLinkKind::Comment,
                     })
                     .collect()
                 )
@@ -44,7 +44,7 @@ pub fn scrape(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlScrapingError> {
                     .map(|link| XmlLink {
                         url: link.as_str().to_string(),
                         location: parser.position(),
-                        kind: XmlLinkType::PlainText(ParentInformation {
+                        kind: XmlLinkKind::PlainText(ParentInformation {
                             parent_tag_name: current_parent.clone()
                         }),
                     })
@@ -57,7 +57,7 @@ pub fn scrape(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlScrapingError> {
                     .map(|link| XmlLink {
                         url: link.as_str().to_string(),
                         location: parser.position(),
-                        kind: XmlLinkType::CData(ParentInformation {
+                        kind: XmlLinkKind::CData(ParentInformation {
                             parent_tag_name: current_parent.clone()
                         }),
                     })
@@ -75,7 +75,7 @@ pub fn scrape(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlScrapingError> {
         collector.push(XmlLink {
             url: namespace_uri,
             location: first_occurrence,
-            kind: XmlLinkType::NameSpace(namespace)
+            kind: XmlLinkKind::NameSpace(namespace)
         })
     });
 
@@ -96,7 +96,7 @@ pub mod xlink;
 pub mod svg;
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum XmlLinkType {
+pub enum XmlLinkKind {
     /// The link is inside a xml-attribute <br/>
     /// Example: `<a href="https://link.example.com">`
     Attribute(OwnedAttribute),
@@ -134,7 +134,7 @@ pub struct ParentInformation {
 pub struct XmlLink {
     pub url: String,
     pub location: TextPosition,
-    pub kind: XmlLinkType
+    pub kind: XmlLinkKind
 }
 
 impl Display for XmlLink {
@@ -173,7 +173,7 @@ pub fn scrape_from_href_tags(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlScrapingEr
                 let mut list: Vec<XmlLink> = scrape_from_xml_start_element_attributes(attributes, &parser)?
                     .into_iter()
                     .filter(|link| {
-                    if let XmlLinkType::Attribute(att) = &link.kind {
+                    if let XmlLinkKind::Attribute(att) = &link.kind {
                         if att.name.local_name == "href" {
                             return true
                         }
@@ -197,7 +197,7 @@ fn scrape_from_xml_start_element_attributes(attributes: &Vec<OwnedAttribute>, pa
             .iter().map(|link| XmlLink {
             url: link.as_str().to_string(),
             location: parser.position(),
-            kind: XmlLinkType::Attribute(attribute.clone()),
+            kind: XmlLinkKind::Attribute(attribute.clone()),
         }).collect();
 
         ret.append(&mut links);
@@ -215,16 +215,16 @@ mod tests {
     fn scrape_hrefs_test() {
         let links = scrape_from_href_tags(TEST_XML).unwrap();
         println!("{:?}", links);
-        assert!(links.iter().any(|it| it.url == "https://attribute.test.com" && matches!(it.kind, XmlLinkType::Attribute(_))));
+        assert!(links.iter().any(|it| it.url == "https://attribute.test.com" && matches!(it.kind, XmlLinkKind::Attribute(_))));
     }
 
     #[test]
     fn scrape_all_test() {
         let links = scrape(TEST_XML).unwrap();
         println!("{:?}", links);
-        assert!(links.iter().any(|it| it.url == "https://attribute.test.com" && matches!(it.kind, XmlLinkType::Attribute(_))));
-        assert!(links.iter().any(|it| it.url == "https://plaintext.test.com" && matches!(it.kind, XmlLinkType::PlainText(_))));
-        assert!(links.iter().any(|it| it.url == "https://cdata.test.com" && matches!(it.kind, XmlLinkType::CData(_))));
-        assert!(links.iter().any(|it| it.url == "http://www.w3.org/XML/1998/namespace" && matches!(it.kind, XmlLinkType::NameSpace(_))));
+        assert!(links.iter().any(|it| it.url == "https://attribute.test.com" && matches!(it.kind, XmlLinkKind::Attribute(_))));
+        assert!(links.iter().any(|it| it.url == "https://plaintext.test.com" && matches!(it.kind, XmlLinkKind::PlainText(_))));
+        assert!(links.iter().any(|it| it.url == "https://cdata.test.com" && matches!(it.kind, XmlLinkKind::CData(_))));
+        assert!(links.iter().any(|it| it.url == "http://www.w3.org/XML/1998/namespace" && matches!(it.kind, XmlLinkKind::NameSpace(_))));
     }
 }

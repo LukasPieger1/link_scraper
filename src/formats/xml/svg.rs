@@ -2,8 +2,8 @@ use std::fmt::{Display, Formatter};
 use thiserror::Error;
 use xml::attribute::OwnedAttribute;
 use xml::common::TextPosition;
-use crate::formats::xml::svg::SvgLinkType::{Attribute, Comment, NameSpace, Script, Text};
-use crate::formats::xml::XmlLinkType;
+use crate::formats::xml::svg::SvgLinkKind::{Attribute, Comment, NameSpace, Script, Text};
+use crate::formats::xml::XmlLinkKind;
 use crate::gen_scrape_from_file;
 
 pub fn scrape(bytes: &[u8]) -> Result<Vec<SvgLink>, SvgScrapingError> {
@@ -13,11 +13,11 @@ pub fn scrape(bytes: &[u8]) -> Result<Vec<SvgLink>, SvgScrapingError> {
             url: link.url,
             location: link.location,
             kind: match link.kind {
-                XmlLinkType::Attribute(attribute) => {Attribute(attribute)}
-                XmlLinkType::Comment => {Comment}
-                XmlLinkType::PlainText(_) => {Text}
-                XmlLinkType::CData(_) => {Script}
-                XmlLinkType::NameSpace(ns) => {NameSpace(ns)}
+                XmlLinkKind::Attribute(attribute) => {Attribute(attribute)}
+                XmlLinkKind::Comment => {Comment}
+                XmlLinkKind::PlainText(_) => {Text}
+                XmlLinkKind::CData(_) => {Script}
+                XmlLinkKind::NameSpace(ns) => {NameSpace(ns)}
             },
         })
         .collect())
@@ -36,11 +36,11 @@ pub enum SvgScrapingError {
 pub struct SvgLink {
     pub url: String,
     pub location: TextPosition,
-    pub kind: SvgLinkType,
+    pub kind: SvgLinkKind,
 }
 
 #[derive(Debug, Clone)]
-pub enum SvgLinkType {
+pub enum SvgLinkKind {
     /// The link is inside a xml-attribute <br/>
     /// Example: `<a href="https://link.example.com">`
     Attribute(OwnedAttribute),

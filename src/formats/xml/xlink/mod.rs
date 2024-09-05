@@ -64,11 +64,11 @@ fn get_xlink_attribute_value(key: &str, attributes: &Vec<OwnedAttribute>) -> Opt
 pub struct XLinkLink {
     pub url: String,
     pub location: TextPosition,
-    pub kind: XLinkLinkType
+    pub kind: XLinkLinkKind
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub enum XLinkLinkType {
+pub enum XLinkLinkKind {
     Simple,
     Extended,
     Role,
@@ -91,7 +91,7 @@ fn scrape_from_start_element(xml_start_element: XmlStartElement, mut parser: &mu
     }
 }
 
-fn scrape_from_option_string(role: Option<String>, link_type: XLinkLinkType, position: TextPosition) -> Vec<XLinkLink> {
+fn scrape_from_option_string(role: Option<String>, link_type: XLinkLinkKind, position: TextPosition) -> Vec<XLinkLink> {
     let Some(role) = role
         else { return vec![] };
     let links = find_urls(&role).iter()
@@ -104,7 +104,7 @@ fn scrape_from_option_string(role: Option<String>, link_type: XLinkLinkType, pos
 }
 
 fn scrape_from_xlink_extended(xlink_extended_element: XlinkExtendedElement, parser: &mut EventReader<&[u8]>) -> Result<Vec<XLinkLink>, XLinkFormatError> {
-    let mut ret: Vec<XLinkLink> = scrape_from_option_string(xlink_extended_element.role, XLinkLinkType::Role, parser.position());
+    let mut ret: Vec<XLinkLink> = scrape_from_option_string(xlink_extended_element.role, XLinkLinkKind::Role, parser.position());
 
     while let Ok(xml_event) = &parser.next() {
         let mut links = match xml_event {
@@ -122,17 +122,17 @@ fn scrape_from_xlink_extended(xlink_extended_element: XlinkExtendedElement, pars
                         locator_links.push(XLinkLink {
                             url: element.href,
                             location: parser.position(),
-                            kind: XLinkLinkType::Extended
+                            kind: XLinkLinkKind::Extended
                         });
-                        locator_links.append(&mut scrape_from_option_string(element.role, XLinkLinkType::Role, parser.position()));
+                        locator_links.append(&mut scrape_from_option_string(element.role, XLinkLinkKind::Role, parser.position()));
                         
                         Ok(locator_links)
                     }
                     XlinkElement::Arc(element) => {
-                        Ok(scrape_from_option_string(element.arcrole, XLinkLinkType::ArcRole, parser.position()))
+                        Ok(scrape_from_option_string(element.arcrole, XLinkLinkKind::ArcRole, parser.position()))
                     },
                     XlinkElement::Resource(element) => {
-                        Ok(scrape_from_option_string(element.role, XLinkLinkType::Role, parser.position()))
+                        Ok(scrape_from_option_string(element.role, XLinkLinkKind::Role, parser.position()))
                     },
                     XlinkElement::Title(_) => Ok(vec![])
                 }?
@@ -151,9 +151,9 @@ fn scrape_from_xlink_extended(xlink_extended_element: XlinkExtendedElement, pars
 }
 
 fn scrape_from_xlink_simple(xlink_element: XlinkSimpleElement, parser: &EventReader<&[u8]>) -> Vec<XLinkLink> {
-    let mut ret = scrape_from_option_string(xlink_element.href, XLinkLinkType::Simple, parser.position());
-    ret.append(&mut scrape_from_option_string(xlink_element.arcrole, XLinkLinkType::ArcRole, parser.position()));
-    ret.append(&mut scrape_from_option_string(xlink_element.role, XLinkLinkType::Role, parser.position()));
+    let mut ret = scrape_from_option_string(xlink_element.href, XLinkLinkKind::Simple, parser.position());
+    ret.append(&mut scrape_from_option_string(xlink_element.arcrole, XLinkLinkKind::ArcRole, parser.position()));
+    ret.append(&mut scrape_from_option_string(xlink_element.role, XLinkLinkKind::Role, parser.position()));
     ret
 }
 
@@ -167,8 +167,8 @@ mod tests {
     fn scrape_xlink_test() {
         let links = scrape(TEST_XLINK).unwrap();
         println!("{:?}", links);
-        assert!(links.iter().any(|it| it.url == "https://simple.test.com" && it.kind == XLinkLinkType::Simple));
-        assert!(links.iter().any(|it| it.url == "https://extended.test.com/" && it.kind == XLinkLinkType::Extended));
-        assert!(links.iter().any(|it| it.url == "https://role.test.com/" && it.kind == XLinkLinkType::Role));
+        assert!(links.iter().any(|it| it.url == "https://simple.test.com" && it.kind == XLinkLinkKind::Simple));
+        assert!(links.iter().any(|it| it.url == "https://extended.test.com/" && it.kind == XLinkLinkKind::Extended));
+        assert!(links.iter().any(|it| it.url == "https://role.test.com/" && it.kind == XLinkLinkKind::Role));
     }
 }
