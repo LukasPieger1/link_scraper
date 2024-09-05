@@ -4,7 +4,7 @@ use exif::Value;
 use thiserror::Error;
 
 use crate::gen_scrape_from_file;
-use crate::link_scraper::find_urls;
+use crate::helpers::find_urls;
 
 pub fn scrape(bytes: &[u8]) -> Result<Vec<ImageLink>, ImageScrapingError> {
     let exif_res = exif::Reader::new()

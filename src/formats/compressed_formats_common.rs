@@ -1,7 +1,7 @@
 use std::io::{Cursor, Read};
 use itertools::Itertools;
 use zip::result::ZipError;
-use crate::link_scraper::find_urls;
+use crate::helpers::find_urls;
 
 /// Scrapes all links from a given compressed file.
 ///

@@ -3,7 +3,7 @@ use std::string::String;
 use thiserror::Error;
 use mupdf::{Document, Page};
 use crate::gen_scrape_from_file;
-use crate::link_scraper::find_urls;
+use crate::helpers::find_urls;
 
 /// Reads a PDF as a bytearray and scrapes all links from it.
 ///

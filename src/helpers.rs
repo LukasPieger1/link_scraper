@@ -7,7 +7,7 @@ pub use crate::any_format_scraper::scrape;
 /// Finds all URLs in a given string
 /// # Example
 /// ```
-/// use crate::link_scraper::link_scraper::find_urls;
+/// use crate::link_scraper::helpers::find_urls;
 /// let urls = find_urls("dfjaoijewfj oijoiwfjoiwjoi j´21214https://www.google.com .äwä.f.f.wä ");
 /// assert_eq!(urls.first().unwrap().as_str(), "https://www.google.com")
 /// ```

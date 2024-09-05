@@ -7,7 +7,7 @@ use xml::name::OwnedName;
 use xml::namespace::Namespace;
 use xml::reader::XmlEvent;
 use crate::gen_scrape_from_file;
-use crate::link_scraper::find_urls;
+use crate::helpers::find_urls;
 
 /// Scrapes links from any file with a xml-schema
 pub fn scrape(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlScrapingError> {

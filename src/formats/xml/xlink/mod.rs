@@ -10,7 +10,7 @@ use crate::formats::xml::xlink::elements::{XlinkElement, XlinkExtendedElement, X
 use crate::formats::xml::xlink::XLinkFormatError::{ArcOutsideOfExtendedError, ExtendedInsideOfExtendedError, LocatorOutsideOfExtendedError, ResourceOutsideOfExtendedError, SimpleInsideOfExtendedError};
 use crate::formats::xml::XmlStartElement;
 use crate::gen_scrape_from_file;
-use crate::link_scraper::find_urls;
+use crate::helpers::find_urls;
 
 pub fn scrape(bytes: &[u8]) -> Result<Vec<XLinkLink>, XLinkFormatError> {
     let mut collector: Vec<XLinkLink> = vec![];

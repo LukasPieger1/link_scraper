@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter};
 use std::io::read_to_string;
 use thiserror::Error;
 use crate::gen_scrape_from_file;
-use crate::link_scraper::find_urls;
+use crate::helpers::find_urls;
 
 /// Guesses the file-type and scrapes links from the file.
 pub fn scrape(bytes: &[u8]) -> Result<Vec<Link>, LinkScrapingError> {
