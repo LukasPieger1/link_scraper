@@ -35,3 +35,6 @@ rtf = ["dep:rtf-parser"]
 image = ["dep:kamadak-exif"]
 any_format = ["dep:infer"]
 all = ["text_file", "pdf", "xml", "xlink", "svg", "ooxml", "odf", "rtf", "image", "any_format"]
+
+[package.metadata.docs.rs]
+features = ["all"]
