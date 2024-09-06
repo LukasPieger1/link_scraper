@@ -4,9 +4,11 @@ use itertools::Itertools;
 use rtf_parser::lexer::Lexer;
 use rtf_parser::tokens::Token;
 use thiserror::Error;
-use crate::gen_scrape_from_file;
+use crate::{formats, gen_scrape_from_file};
 use crate::helpers::find_urls;
 
+/// Limitations: Currently cannot extract Hyperlinks or comments.
+/// But you may use [`formats::plaintext::scrape`] for those.
 pub fn scrape(bytes: &[u8]) -> Result<Vec<RtfLink>, RtfScrapingError> {
     let data = read_to_string(bytes)?;
     let tokens = Lexer::scan(&data)?;
