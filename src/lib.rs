@@ -1,6 +1,8 @@
 //! This Crate's main feature are the `scrape`-functions of the different Modules.
 //!
 //! You can use those functions to extract Links and related information from a file of any supported format.
+//!
+//! Please refer to the git-projects README.md for known issues and further information.
 
 /// Helper functions
 pub mod helpers;

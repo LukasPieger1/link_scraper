@@ -41,6 +41,38 @@ So to actually use this crate you __need__ to activate at least one format-featu
 This modules' `scrape`-function will behave nicely with most files, however its ability to recognize filetypes is 
 somewhat limited, and if you know what format you're using, you should probably use the format-specific module's `scrape`-function instead.
 
+## Known issues
+
+### Error when trying to use the crate under Windows with PDF enabled
+
+The build process throws an error
+```
+error: failed to run custom build command for `mupdf-sys v0.4.4`
+note: To improve backtraces for build dependencies, set the CARGO_PROFILE_DEV_BUILD_OVERRIDE_DEBUG=true environment variable to enable debug information generation.
+Caused by:
+  process didn't exit successfully: `C:\path\to\your\project\target\debug\build\mupdf-sys-0000000000000000\build-script-build` (exit code: 101)
+  --- stderr
+  thread 'main' panicked at 
+...
+```
+
+This is due to an [issue with the mupdf-crate](https://github.com/messense/mupdf-rs/issues/72) related to the filesize-restrictions of crates.io.
+
+As a temporary workaround you can add the mupdf-git-repository to your project as a submodule with
+```bash
+git submodule add https://github.com/messense/mupdf-rs.git external/mupd
+```
+
+Don't forget to initialize the submodule with
+```bash
+git submodule update --init --recursive
+```
+
+And add the following lines to your `Cargo.toml`:
+```toml
+[patch.crates-io]
+mupdf = { path= "external/mupdf" }
+```
 
 ## License
 
