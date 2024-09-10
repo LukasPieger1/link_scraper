@@ -1,7 +1,8 @@
 <?xml version='1.0'?>
 <parent>
     <a href="https://attribute.test.com">Hyperlink</a>
-    <text>https://plaintext.test.com</text><!-- https://comment.test.com -->
+    <text>https://plaintext.test.com</text>
+    <!-- https://comment.test.com -->
     <![CDATA[https://cdata.test.com]]>
     <foo:child xmlns:foo='https://ns.test.com'>
         <foo:bar>FooBar</foo:bar>

@@ -5,7 +5,7 @@ use thiserror::Error;
 use xml::common::{Position, TextPosition};
 use xml::EventReader;
 use xml::reader::XmlEvent;
-use crate::formats::ooxml::OoxmlLinkKind::{Comment, Hyperlink};
+use crate::formats::ooxml::OoxmlLinkKind::{Comment, Hyperlink, PlainText};
 use crate::gen_scrape_from_file;
 use crate::helpers::find_urls;
 
@@ -120,7 +120,10 @@ fn scrape_from_xml_file(data: impl Read, file_name: &str, collector: &mut Vec<Oo
             find_urls(&text).iter().for_each(|link| collector.push(OoxmlLink {
                 url: link.as_str().to_string(),
                 location: OoxmlLinkLocation { file: file_name.to_string(), position: parser.position()},
-                kind: if file_name == "word/comments.xml" { Comment } else { Hyperlink }
+                kind: if file_name.contains("/comment") { Comment }
+                    else {
+                        if file_name.contains("/_rels/") { Hyperlink } else { PlainText }
+                    }
             }));
         }
 
@@ -145,6 +148,7 @@ mod tests {
         println!("{:?}", links);
         assert!(links.iter().any(|it| it.url == "https://hyperlink.test.com/" && it.kind == Hyperlink));
         assert!(links.iter().any(|it| it.url == "https://comment.test.com" && it.kind == Comment));
+        assert!(links.iter().any(|it| it.url == "https://plaintext.test.com" && it.kind == PlainText));
     }
 
     #[test]
@@ -152,6 +156,8 @@ mod tests {
         let links = scrape(TEST_PPTX).unwrap();
         println!("{:?}", links);
         assert!(links.iter().any(|it| it.url == "https://hyperlink.test.com/" && it.kind == Hyperlink));
+        assert!(links.iter().any(|it| it.url == "https://comment.test.com/" && it.kind == Comment));
+        assert!(links.iter().any(|it| it.url == "https://plaintext.test.com" && it.kind == PlainText));
     }
 
     #[test]
@@ -159,6 +165,8 @@ mod tests {
         let links = scrape(TEST_XLSX).unwrap();
         println!("{:?}", links);
         assert!(links.iter().any(|it| it.url == "https://hyperlink.test.com/" && it.kind == Hyperlink));
+        assert!(links.iter().any(|it| it.url == "https://comment.test.com" && it.kind == Comment));
+        assert!(links.iter().any(|it| it.url == "https://plaintext.test.com" && it.kind == PlainText));
     }
 
     #[test]
