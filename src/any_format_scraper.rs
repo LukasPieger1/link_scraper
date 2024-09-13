@@ -24,6 +24,7 @@ where
         }
     }
 
+    // We do not consume because we want to use the complete buffer later.
     let buf = reader.fill_buf()?;
     match buf.len() {
         0 => Ok(Vec::with_capacity(0)),
