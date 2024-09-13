@@ -153,7 +153,10 @@ impl Display for Link {
     }
 }
 
-fn scrape_from_buffer<R>(mut reader: R, file_type: Type) -> Result<Vec<Link>, LinkScrapingError> {
+fn scrape_from_buffer<R>(mut reader: R, file_type: Type) -> Result<Vec<Link>, LinkScrapingError>
+where
+    R: BufRead + Seek,
+{
     match file_type.mime_type() {
         "text/plain" | "text/csv" | "text/css" | "application/json" => Ok(try_text_file(reader)?),
 
