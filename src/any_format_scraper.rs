@@ -1,5 +1,6 @@
 use crate::gen_scrape_froms;
 use crate::helpers::find_urls;
+use infer::Type;
 use std::fmt::{Display, Formatter};
 use std::io::{read_to_string, BufRead, BufReader, Read, Seek};
 use thiserror::Error;
@@ -14,54 +15,28 @@ where
         R: BufRead + Seek,
     {
         if let Some(file_type) = infer::get(reader.fill_buf()?) {
-            match file_type.mime_type() {
-                "text/plain" | "text/csv" | "text/css" | "application/json" => {
-                    Ok(try_text_file(reader)?)
-                }
-
-                "application/vnd.oasis.opendocument.text"
-                | "application/vnd.oasis.opendocument.spreadsheet"
-                | "application/vnd.oasis.opendocument.template"
-                | "application/vnd.oasis.opendocument.presentation" => Ok(try_odf(reader)?),
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" => {
-                    Ok(try_ooxml(reader)?)
-                }
-
-                "application/zip" => {
-                    let mut bytes = Vec::new();
-                    reader.read_to_end(&mut bytes)?;
-                    try_zip(bytes)
-                }
-                "application/pdf" => {
-                    let mut bytes = Vec::new();
-                    reader.read_to_end(&mut bytes)?;
-                    Ok(try_pdf(bytes)?)
-                }
-                "application/rtf" => Ok(try_rtf(reader)?),
-                "image/svg+xml" => Ok(try_svg(reader)?),
-                "text/xml" | "text/html" => Ok(try_xml(reader)?),
-
-                "image/jpeg" | "image/png" | "image/tiff" | "image/webp" | "image/heic"
-                | "image/heif" => Ok(try_image(reader)?),
-
-                _ => Err(LinkScrapingError::FileTypeNotImplemented(
-                    file_type.mime_type().to_string(),
-                )),
-            }
+            scrape_from_buffer(reader, file_type)
         } else {
-            return Ok(find_urls(&read_to_string(reader)?)
+            Ok(find_urls(&read_to_string(reader)?)
                 .iter()
                 .map(|link| Link::StringLink(link.as_str().to_string()))
-                .collect());
+                .collect())
         }
     }
 
-    match reader.fill_buf()?.len() {
+    let buf = reader.fill_buf()?;
+    match buf.len() {
         0 => Ok(Vec::with_capacity(0)),
         // infer get_from_path uses a buffer of the size 8192 (see infer::Infer::get_from_path)
         // Therefore we haveto make sure,that we grab at least this amount of data when
         // processing it.
-        1..8192 => infer_and_scrape(BufReader::with_capacity(8192, reader)),
+        1..8192 => {
+            if let Some(found) = infer::get(buf) {
+                scrape_from_buffer(reader, found)
+            } else {
+                infer_and_scrape(BufReader::with_capacity(8192, reader))
+            }
+        }
         // If we have 8192 or more, we can just use the existing buffer.
         _ => infer_and_scrape(reader),
     }
@@ -175,6 +150,47 @@ impl Display for Link {
                 write!(f, "ImageLink({})", link)
             }
         }
+    }
+}
+
+fn scrape_from_buffer<R>(mut reader: R, file_type: Type) -> Result<Vec<Link>, LinkScrapingError> {
+    match file_type.mime_type() {
+        "text/plain" | "text/csv" | "text/css" | "application/json" => Ok(try_text_file(reader)?),
+
+        "application/vnd.oasis.opendocument.text"
+        | "application/vnd.oasis.opendocument.spreadsheet"
+        | "application/vnd.oasis.opendocument.template"
+        | "application/vnd.oasis.opendocument.presentation" => Ok(try_odf(reader)?),
+
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        | "application/vnd.openxmlformats-officedocument.spreadsheetml.template"
+        | "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        | "application/vnd.openxmlformats-officedocument.wordprocessingml.template"
+        | "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        | "application/vnd.openxmlformats-officedocument.presentationml.template" => Ok(try_ooxml(reader)?),
+        | "application/vnd.openxmlformats-officedocument.presentationml.slideshow" => Ok(try_ooxml(reader)?),
+
+        "application/zip" => {
+            let mut bytes = Vec::new();
+            reader.read_to_end(&mut bytes)?;
+            try_zip(bytes)
+        }
+        "application/pdf" => {
+            let mut bytes = Vec::new();
+            reader.read_to_end(&mut bytes)?;
+            Ok(try_pdf(bytes)?)
+        }
+        "application/rtf" => Ok(try_rtf(reader)?),
+        "image/svg+xml" => Ok(try_svg(reader)?),
+        "text/xml" | "text/html" => Ok(try_xml(reader)?),
+
+        "image/jpeg" | "image/png" | "image/tiff" | "image/webp" | "image/heic" | "image/heif" => {
+            Ok(try_image(reader)?)
+        }
+
+        _ => Err(LinkScrapingError::FileTypeNotImplemented(
+            file_type.mime_type().to_string(),
+        )),
     }
 }
 
