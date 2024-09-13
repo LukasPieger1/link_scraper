@@ -4,10 +4,10 @@
 //!
 //! Please refer to the git-projects README.md for known issues and further information.
 
-/// Helper functions
-pub mod helpers;
-/// Contains format-specific scrape-functions. Prefer over [`any_format_scraper`].
-pub mod formats;
 #[cfg(feature = "any_format")]
 /// Use only if you're not sure what format your file will be.
 pub mod any_format_scraper;
+/// Contains format-specific scrape-functions. Prefer over [`any_format_scraper`].
+pub mod formats;
+/// Helper functions
+pub mod helpers;

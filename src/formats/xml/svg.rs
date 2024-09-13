@@ -1,28 +1,32 @@
+use crate::formats::xml::svg::SvgLinkKind::{Attribute, Comment, NameSpace, Script, Text};
+use crate::formats::xml::XmlLinkKind;
+use crate::gen_scrape_froms;
 use std::fmt::{Display, Formatter};
+use std::io::Read;
 use thiserror::Error;
 use xml::attribute::OwnedAttribute;
 use xml::common::TextPosition;
-use crate::formats::xml::svg::SvgLinkKind::{Attribute, Comment, NameSpace, Script, Text};
-use crate::formats::xml::XmlLinkKind;
-use crate::gen_scrape_from_file;
 
-pub fn scrape(bytes: &[u8]) -> Result<Vec<SvgLink>, SvgScrapingError> {
-    Ok(crate::formats::xml::scrape(bytes)?
+pub fn scrape<R>(reader: R) -> Result<Vec<SvgLink>, SvgScrapingError>
+where
+    R: Read,
+{
+    Ok(crate::formats::xml::scrape(reader)?
         .into_iter()
         .map(|link| SvgLink {
             url: link.url,
             location: link.location,
             kind: match link.kind {
-                XmlLinkKind::Attribute(attribute) => {Attribute(attribute)}
-                XmlLinkKind::Comment => {Comment}
-                XmlLinkKind::PlainText(_) => {Text}
-                XmlLinkKind::CData(_) => {Script}
-                XmlLinkKind::NameSpace(ns) => {NameSpace(ns)}
+                XmlLinkKind::Attribute(attribute) => Attribute(attribute),
+                XmlLinkKind::Comment => Comment,
+                XmlLinkKind::PlainText(_) => Text,
+                XmlLinkKind::CData(_) => Script,
+                XmlLinkKind::NameSpace(ns) => NameSpace(ns),
             },
         })
         .collect())
 }
-gen_scrape_from_file!(Result<Vec<SvgLink>, SvgScrapingError>);
+gen_scrape_froms!(scrape(Read) -> Result<Vec<SvgLink>, SvgScrapingError>);
 
 #[derive(Error, Debug)]
 pub enum SvgScrapingError {
@@ -85,7 +89,12 @@ mod tests {
     fn scrape_svg_test() {
         let links = scrape(TEST_SVG).unwrap();
         println!("{:?}", links);
-        assert!(links.iter().any(|it| it.url == "https://cdata.test.com/insideACodeSnippet" && matches!(it.kind, Script)));
-        assert!(links.iter().any(|it| it.url == "http://www.w3.org/2000/svg" && matches!(it.kind, NameSpace(_))));
+        assert!(links
+            .iter()
+            .any(|it| it.url == "https://cdata.test.com/insideACodeSnippet"
+                && matches!(it.kind, Script)));
+        assert!(links
+            .iter()
+            .any(|it| it.url == "http://www.w3.org/2000/svg" && matches!(it.kind, NameSpace(_))));
     }
 }

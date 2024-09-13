@@ -1,99 +1,120 @@
+use crate::gen_scrape_froms;
+use crate::helpers::find_urls;
 use std::fmt::{Display, Formatter};
+use std::io::Read;
 use thiserror::Error;
 use xml::attribute::OwnedAttribute;
 use xml::common::{Position, TextPosition};
-use xml::EventReader;
 use xml::name::OwnedName;
 use xml::namespace::Namespace;
 use xml::reader::XmlEvent;
-use crate::gen_scrape_from_file;
-use crate::helpers::find_urls;
+use xml::EventReader;
 
 /// Scrapes links from any file with a xml-schema
-pub fn scrape(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlScrapingError> {
+pub fn scrape<R>(reader: R) -> Result<Vec<XmlLink>, XmlScrapingError>
+where
+    R: Read,
+{
     let mut collector: Vec<XmlLink> = vec![];
     let mut namespaces: Vec<NamespaceOccurrence> = vec![];
 
     let mut current_parent: Option<OwnedName> = None;
-    let mut parser = EventReader::new(bytes);
+    let mut parser = EventReader::new(reader);
     while let Ok(xml_event) = &parser.next() {
         match xml_event {
-            XmlEvent::StartElement { name, attributes, namespace } => {
+            XmlEvent::StartElement {
+                name,
+                attributes,
+                namespace,
+            } => {
                 namespace.0.iter().for_each(|(ns_name, ns_ref)| {
                     let ns_occurence = NamespaceOccurrence {
-                        namespace: ns_name.to_string(), namespace_uri: ns_ref.to_string(), first_occurrence: parser.position() };
-                    if !&namespaces.contains(&ns_occurence) { namespaces.push(ns_occurence); }
+                        namespace: ns_name.to_string(),
+                        namespace_uri: ns_ref.to_string(),
+                        first_occurrence: parser.position(),
+                    };
+                    if !&namespaces.contains(&ns_occurence) {
+                        namespaces.push(ns_occurence);
+                    }
                 });
                 current_parent = Some(name.clone());
-                collector.append(&mut scrape_from_xml_start_element_attributes(&attributes, &parser)?)
+                collector.append(&mut scrape_from_xml_start_element_attributes(
+                    &attributes,
+                    &parser,
+                )?)
             }
-            XmlEvent::Comment(comment) => {
-                collector.append(&mut find_urls(comment)
+            XmlEvent::Comment(comment) => collector.append(
+                &mut find_urls(comment)
                     .iter()
                     .map(|link| XmlLink {
                         url: link.as_str().to_string(),
                         location: parser.position(),
                         kind: XmlLinkKind::Comment,
                     })
-                    .collect()
-                )
-            }
-            XmlEvent::Characters(chars) => {
-                collector.append(&mut find_urls(chars)
+                    .collect(),
+            ),
+            XmlEvent::Characters(chars) => collector.append(
+                &mut find_urls(chars)
                     .iter()
                     .map(|link| XmlLink {
                         url: link.as_str().to_string(),
                         location: parser.position(),
                         kind: XmlLinkKind::PlainText(ParentInformation {
-                            parent_tag_name: current_parent.clone()
+                            parent_tag_name: current_parent.clone(),
                         }),
                     })
-                    .collect()
-                )
-            }
-            XmlEvent::CData(chars) => {
-                collector.append(&mut find_urls(chars)
+                    .collect(),
+            ),
+            XmlEvent::CData(chars) => collector.append(
+                &mut find_urls(chars)
                     .iter()
                     .map(|link| XmlLink {
                         url: link.as_str().to_string(),
                         location: parser.position(),
                         kind: XmlLinkKind::CData(ParentInformation {
-                            parent_tag_name: current_parent.clone()
+                            parent_tag_name: current_parent.clone(),
                         }),
                     })
-                    .collect()
-                )
-            }
-            XmlEvent::EndDocument => {break}
+                    .collect(),
+            ),
+            XmlEvent::EndDocument => break,
             _ => {}
         }
     }
 
-    namespaces.into_iter().for_each(|NamespaceOccurrence{namespace, namespace_uri, first_occurrence }| {
-        if find_urls(&namespace_uri).len() == 0 { return }
+    namespaces.into_iter().for_each(
+        |NamespaceOccurrence {
+             namespace,
+             namespace_uri,
+             first_occurrence,
+         }| {
+            if find_urls(&namespace_uri).len() == 0 {
+                return;
+            }
 
-        collector.push(XmlLink {
-            url: namespace_uri,
-            location: first_occurrence,
-            kind: XmlLinkKind::NameSpace(namespace)
-        })
-    });
+            collector.push(XmlLink {
+                url: namespace_uri,
+                location: first_occurrence,
+                kind: XmlLinkKind::NameSpace(namespace),
+            })
+        },
+    );
 
     Ok(collector)
 }
-gen_scrape_from_file!(Result<Vec<XmlLink>, XmlScrapingError>);
+gen_scrape_froms!(scrape(Read) -> Result<Vec<XmlLink>, XmlScrapingError>);
 
 #[derive(Error, Debug)]
 pub enum XmlScrapingError {
     #[error(transparent)]
     IoError(#[from] std::io::Error),
     #[error(transparent)]
-    XmlReaderError(#[from] xml::reader::Error)
+    XmlReaderError(#[from] xml::reader::Error),
 }
 
+pub mod svg;
 #[cfg(feature = "xlink")]
 pub mod xlink;
-pub mod svg;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum XmlLinkKind {
@@ -134,7 +155,7 @@ pub struct ParentInformation {
 pub struct XmlLink {
     pub url: String,
     pub location: TextPosition,
-    pub kind: XmlLinkKind
+    pub kind: XmlLinkKind,
 }
 
 impl Display for XmlLink {
@@ -146,14 +167,14 @@ impl Display for XmlLink {
 pub struct XmlStartElement<'a> {
     name: &'a OwnedName,
     attributes: &'a Vec<OwnedAttribute>,
-    _namespace: &'a Namespace
+    _namespace: &'a Namespace,
 }
 
 #[derive(Debug, Clone)]
 struct NamespaceOccurrence {
     namespace: String,
     namespace_uri: String,
-    first_occurrence: TextPosition
+    first_occurrence: TextPosition,
 }
 
 impl PartialEq for NamespaceOccurrence {
@@ -169,17 +190,23 @@ pub fn scrape_from_href_tags(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlScrapingEr
     let mut parser = EventReader::new(bytes);
     while let Ok(xml_event) = &parser.next() {
         match xml_event {
-            XmlEvent::StartElement { name: _name, attributes, namespace: _namespace } => {
-                let mut list: Vec<XmlLink> = scrape_from_xml_start_element_attributes(attributes, &parser)?
-                    .into_iter()
-                    .filter(|link| {
-                    if let XmlLinkKind::Attribute(att) = &link.kind {
-                        if att.name.local_name == "href" {
-                            return true
-                        }
-                    }
-                    return false
-                }).collect();
+            XmlEvent::StartElement {
+                name: _name,
+                attributes,
+                namespace: _namespace,
+            } => {
+                let mut list: Vec<XmlLink> =
+                    scrape_from_xml_start_element_attributes(attributes, &parser)?
+                        .into_iter()
+                        .filter(|link| {
+                            if let XmlLinkKind::Attribute(att) = &link.kind {
+                                if att.name.local_name == "href" {
+                                    return true;
+                                }
+                            }
+                            return false;
+                        })
+                        .collect();
                 collector.append(&mut list)
             }
             XmlEvent::EndDocument => break,
@@ -190,15 +217,23 @@ pub fn scrape_from_href_tags(bytes: &[u8]) -> Result<Vec<XmlLink>, XmlScrapingEr
     Ok(collector)
 }
 
-fn scrape_from_xml_start_element_attributes(attributes: &Vec<OwnedAttribute>, parser: &EventReader<&[u8]>) -> Result<Vec<XmlLink>, XmlScrapingError> {
+fn scrape_from_xml_start_element_attributes<R>(
+    attributes: &Vec<OwnedAttribute>,
+    parser: &EventReader<R>,
+) -> Result<Vec<XmlLink>, XmlScrapingError>
+where
+    R: Read,
+{
     let mut ret: Vec<XmlLink> = vec![];
     for attribute in attributes {
         let mut links = find_urls(&attribute.value)
-            .iter().map(|link| XmlLink {
-            url: link.as_str().to_string(),
-            location: parser.position(),
-            kind: XmlLinkKind::Attribute(attribute.clone()),
-        }).collect();
+            .iter()
+            .map(|link| XmlLink {
+                url: link.as_str().to_string(),
+                location: parser.position(),
+                kind: XmlLinkKind::Attribute(attribute.clone()),
+            })
+            .collect();
 
         ret.append(&mut links);
     }
@@ -215,16 +250,24 @@ mod tests {
     fn scrape_hrefs_test() {
         let links = scrape_from_href_tags(TEST_XML).unwrap();
         println!("{:?}", links);
-        assert!(links.iter().any(|it| it.url == "https://attribute.test.com" && matches!(it.kind, XmlLinkKind::Attribute(_))));
+        assert!(links.iter().any(|it| it.url == "https://attribute.test.com"
+            && matches!(it.kind, XmlLinkKind::Attribute(_))));
     }
 
     #[test]
     fn scrape_all_test() {
         let links = scrape(TEST_XML).unwrap();
         println!("{:?}", links);
-        assert!(links.iter().any(|it| it.url == "https://attribute.test.com" && matches!(it.kind, XmlLinkKind::Attribute(_))));
-        assert!(links.iter().any(|it| it.url == "https://plaintext.test.com" && matches!(it.kind, XmlLinkKind::PlainText(_))));
-        assert!(links.iter().any(|it| it.url == "https://cdata.test.com" && matches!(it.kind, XmlLinkKind::CData(_))));
-        assert!(links.iter().any(|it| it.url == "http://www.w3.org/XML/1998/namespace" && matches!(it.kind, XmlLinkKind::NameSpace(_))));
+        assert!(links.iter().any(|it| it.url == "https://attribute.test.com"
+            && matches!(it.kind, XmlLinkKind::Attribute(_))));
+        assert!(links.iter().any(|it| it.url == "https://plaintext.test.com"
+            && matches!(it.kind, XmlLinkKind::PlainText(_))));
+        assert!(links.iter().any(
+            |it| it.url == "https://cdata.test.com" && matches!(it.kind, XmlLinkKind::CData(_))
+        ));
+        assert!(links
+            .iter()
+            .any(|it| it.url == "http://www.w3.org/XML/1998/namespace"
+                && matches!(it.kind, XmlLinkKind::NameSpace(_))));
     }
 }

@@ -1,32 +1,41 @@
-use std::fmt::{Display, Formatter};
-use std::io::Cursor;
 use exif::Value;
+use std::fmt::{Display, Formatter};
+use std::io;
 use thiserror::Error;
 
-use crate::gen_scrape_from_file;
+use crate::gen_scrape_froms;
 use crate::helpers::find_urls;
 
-pub fn scrape(bytes: &[u8]) -> Result<Vec<ImageLink>, ImageScrapingError> {
-    let exif_res = exif::Reader::new()
-        .read_from_container(&mut Cursor::new(bytes));
+pub fn scrape<R>(mut reader: R) -> Result<Vec<ImageLink>, ImageScrapingError>
+where
+    R: io::BufRead + io::Seek,
+{
+    let exif_res = exif::Reader::new().read_from_container(&mut reader);
 
     if let Err(exif::Error::NotFound(_)) = exif_res {
-        return Ok(vec![])
+        return Ok(vec![]);
     }
     let exif = exif_res?;
 
-    Ok(exif.fields().map(|field| {
-        if let Value::Ascii(_) = &field.value {
-            find_urls(&field.display_value().to_string())
-                .iter().map(|link| ImageLink {
-                url: link.as_str().to_string(),
-                exif_field: field.tag.to_string()
-            }).collect()
-        } else { vec![] }
-    }).flatten().collect()
-    )
+    Ok(exif
+        .fields()
+        .map(|field| {
+            if let Value::Ascii(_) = &field.value {
+                find_urls(&field.display_value().to_string())
+                    .iter()
+                    .map(|link| ImageLink {
+                        url: link.as_str().to_string(),
+                        exif_field: field.tag.to_string(),
+                    })
+                    .collect()
+            } else {
+                vec![]
+            }
+        })
+        .flatten()
+        .collect())
 }
-gen_scrape_from_file!(Result<Vec<ImageLink>, ImageScrapingError>);
+gen_scrape_froms!(scrape(Read) -> Result<Vec<ImageLink>, ImageScrapingError>);
 
 #[derive(Error, Debug)]
 pub enum ImageScrapingError {
@@ -39,7 +48,7 @@ pub enum ImageScrapingError {
 #[derive(Debug, Clone, PartialEq)]
 pub struct ImageLink {
     pub url: String,
-    pub exif_field: String
+    pub exif_field: String,
 }
 
 impl Display for ImageLink {
@@ -57,15 +66,21 @@ mod tests {
 
     #[test]
     fn scrape_exif_test() {
-        let links = scrape(TEST_JPG).unwrap();
+        let links = scrape_from_slice(TEST_JPG).unwrap();
         println!("{:?}", links);
-        assert!(links.contains(&ImageLink { url: "https://test.exifdata.com".to_string(), exif_field: "ImageDescription".to_string() }));
-        assert!(links.contains(&ImageLink { url: "https://test2.exifdata.com".to_string(), exif_field: "ImageDescription".to_string() }))
+        assert!(links.contains(&ImageLink {
+            url: "https://test.exifdata.com".to_string(),
+            exif_field: "ImageDescription".to_string()
+        }));
+        assert!(links.contains(&ImageLink {
+            url: "https://test2.exifdata.com".to_string(),
+            exif_field: "ImageDescription".to_string()
+        }))
     }
 
     #[test]
     fn scrape_empty_exif_data_test() {
-        let links = scrape(TEST_JPG_NO_EXIF).unwrap();
+        let links = scrape_from_slice(TEST_JPG_NO_EXIF).unwrap();
         assert_eq!(links.len(), 0)
     }
 }
