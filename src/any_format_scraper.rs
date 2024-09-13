@@ -171,8 +171,12 @@ where
         | "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         | "application/vnd.openxmlformats-officedocument.wordprocessingml.template"
         | "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-        | "application/vnd.openxmlformats-officedocument.presentationml.template" => Ok(try_ooxml(reader)?),
-        | "application/vnd.openxmlformats-officedocument.presentationml.slideshow" => Ok(try_ooxml(reader)?),
+        | "application/vnd.openxmlformats-officedocument.presentationml.template" => {
+            Ok(try_ooxml(reader)?)
+        }
+        "application/vnd.openxmlformats-officedocument.presentationml.slideshow" => {
+            Ok(try_ooxml(reader)?)
+        }
 
         "application/zip" => {
             let mut bytes = Vec::new();
@@ -184,7 +188,11 @@ where
             reader.read_to_end(&mut bytes)?;
             Ok(try_pdf(bytes)?)
         }
-        "application/rtf" => Ok(try_rtf(reader)?),
+        "application/rtf" => {
+            let mut s = String::new();
+            reader.read_to_string(&mut s)?;
+            Ok(try_rtf(s)?)
+        }
         "image/svg+xml" => Ok(try_svg(reader)?),
         "text/xml" | "text/html" => Ok(try_xml(reader)?),
 
@@ -201,8 +209,8 @@ where
 macro_rules! gen_try_format {
     ($name:ident($ty:ty), $feature:literal, $module:ident, $link:ident) => {
         #[cfg(feature = $feature)]
-        fn $name(reader: $ty) -> Result<Vec<Link>, LinkScrapingError> {
-            return Ok(crate::formats::$module::scrape(reader)?.into_iter().map(|link| Link::$link(link)).collect());
+        fn $name(value: $ty) -> Result<Vec<Link>, LinkScrapingError> {
+            return Ok(crate::formats::$module::scrape(value)?.into_iter().map(|link| Link::$link(link)).collect());
         }
 
         #[cfg(not(feature = $feature))]
@@ -221,7 +229,7 @@ gen_try_format!(
 gen_try_format!(try_ooxml(impl Read + Seek), "ooxml", ooxml, OoxmlLink);
 gen_try_format!(try_odf(impl Read + Seek), "odf", odf, OdfLink);
 gen_try_format!(try_pdf(impl AsRef<[u8]>), "pdf", pdf, PdfLink);
-gen_try_format!(try_rtf(impl Read), "rtf", rtf, RtfLink);
+gen_try_format!(try_rtf(impl AsRef<str>), "rtf", rtf, RtfLink);
 gen_try_format!(try_xml(impl Read), "xml", xml, XmlLink);
 gen_try_format!(try_image(impl BufRead + Seek), "image", image, ImageLink);
 
