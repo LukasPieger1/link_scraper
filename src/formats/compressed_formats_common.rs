@@ -37,6 +37,7 @@ where
     Ok(links)
 }
 
+/// Takes a reader for some zipped bytes and tries to extract some data from it.
 pub(crate) fn unified_unzip_scrape<R, T, E, F>(reader: R, extractor: F) -> Result<Vec<T>, E>
 where
     R: Read + Seek,
