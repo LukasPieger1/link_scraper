@@ -28,8 +28,8 @@ where
     let buf = reader.fill_buf()?;
     match buf.len() {
         0 => Ok(Vec::with_capacity(0)),
-        // infer get_from_path uses a buffer of the size 8192 (see infer::Infer::get_from_path)
-        // Therefore we haveto make sure,that we grab at least this amount of data when
+        // Infer uses a buffer of the size 8192 for inferring files. (see infer::Infer::get_from_path)
+        // Therefore we have to make sure,that we grab at least this amount of data when
         // processing it.
         1..8192 => {
             if let Some(found) = infer::get(buf) {
@@ -38,7 +38,7 @@ where
                 infer_and_scrape(BufReader::with_capacity(8192, reader))
             }
         }
-        // If we have 8192 or more, we can just use the existing buffer.
+        // If we have 8192 bytes or more, we can just use the existing buffer.
         _ => infer_and_scrape(reader),
     }
 }
