@@ -207,10 +207,10 @@ where
 }
 
 macro_rules! gen_try_format {
-    ($name:ident($ty:ty), $feature:literal, $module:ident, $link:ident) => {
+    ($name:ident($ty:ty), $feature:literal, $module:ident, $link:ident => $scrape: ident) => {
         #[cfg(feature = $feature)]
         fn $name(value: $ty) -> Result<Vec<Link>, LinkScrapingError> {
-            return Ok(crate::formats::$module::scrape(value)?.into_iter().map(|link| Link::$link(link)).collect());
+            return Ok(crate::formats::$module::$scrape(value)?.into_iter().map(|link| Link::$link(link)).collect());
         }
 
         #[cfg(not(feature = $feature))]
@@ -224,14 +224,14 @@ gen_try_format!(
     try_text_file(impl BufRead),
     "plaintext",
     plaintext,
-    TextFileLink
+    TextFileLink => scrape
 );
-gen_try_format!(try_ooxml(impl Read + Seek), "ooxml", ooxml, OoxmlLink);
-gen_try_format!(try_odf(impl Read + Seek), "odf", odf, OdfLink);
-gen_try_format!(try_pdf(impl AsRef<[u8]>), "pdf", pdf, PdfLink);
-gen_try_format!(try_rtf(impl AsRef<str>), "rtf", rtf, RtfLink);
-gen_try_format!(try_xml(impl Read), "xml", xml, XmlLink);
-gen_try_format!(try_image(impl BufRead + Seek), "image", image, ImageLink);
+gen_try_format!(try_ooxml(impl Read + Seek), "ooxml", ooxml, OoxmlLink => scrape);
+gen_try_format!(try_odf(impl Read + Seek), "odf", odf, OdfLink => scrape);
+gen_try_format!(try_pdf(impl AsRef<[u8]>), "pdf", pdf, PdfLink => scrape_from_slice);
+gen_try_format!(try_rtf(impl AsRef<str>), "rtf", rtf, RtfLink => scrape_from_string);
+gen_try_format!(try_xml(impl Read), "xml", xml, XmlLink => scrape);
+gen_try_format!(try_image(impl BufRead + Seek), "image", image, ImageLink => scrape);
 
 #[cfg(feature = "svg")]
 fn try_svg(reader: impl Read) -> Result<Vec<Link>, LinkScrapingError> {

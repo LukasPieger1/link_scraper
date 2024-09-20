@@ -4,14 +4,28 @@ use itertools::Itertools;
 use rtf_parser::lexer::Lexer;
 use rtf_parser::tokens::Token;
 use std::fmt::{Display, Formatter};
-use std::io::Read;
+use std::io::{BufRead, Read};
 use thiserror::Error;
 
 /// Limitations: Currently cannot extract Hyperlinks or comments.
 /// But you may use [`formats::plaintext::scrape`] for those.
-pub fn scrape<T>(s: T) -> Result<Vec<RtfLink>, RtfScrapingError>
+///
+/// Reads the whole stream before processing the contents and converts it to str.
+/// Use [`scrape_from_string`] to omit the [`BufRead`].
+pub fn scrape<R>(mut reader: R) -> Result<Vec<RtfLink>, RtfScrapingError>
 where
-    T: AsRef<str>,
+    R: BufRead,
+{
+    let mut buffer = Vec::new();
+    reader.read_to_end(&mut buffer)?;
+    scrape_from_slice(buffer)
+}
+
+/// Limitations: Currently cannot extract Hyperlinks or comments.
+/// But you may use [`formats::plaintext::scrape`] for those.
+pub fn scrape_from_string<S>(s: S) -> Result<Vec<RtfLink>, RtfScrapingError>
+where
+    S: AsRef<str>,
 {
     let tokens = Lexer::scan(s.as_ref())?;
     let mut text = String::new();
@@ -37,7 +51,7 @@ pub fn scrape_from_slice<T>(bytes: T) -> Result<Vec<RtfLink>, RtfScrapingError>
 where
     T: AsRef<[u8]>,
 {
-    scrape(std::str::from_utf8(bytes.as_ref())?)
+    scrape_from_string(std::str::from_utf8(bytes.as_ref())?)
 }
 
 gen_scrape_froms!(

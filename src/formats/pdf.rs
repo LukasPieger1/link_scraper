@@ -1,20 +1,40 @@
+use crate::formats::rtf::scrape_from_string;
 use crate::gen_scrape_froms;
 use crate::helpers::find_urls;
+use itertools::Itertools;
 use mupdf::{Document, Page};
 use std::fmt::{Display, Formatter};
+use std::io::{BufRead, Read};
 use std::string::String;
 use thiserror::Error;
 
-/// Takes a PDF as a byt and scrapes all links from it.
+/// Takes a PDF as a byte stream and scrapes all links from it.
 ///
 /// For encrypted files please use [`scrape_encrypted`] instead
-pub fn scrape<T>(buf: T) -> Result<Vec<PdfLink>, PdfScrapingError>
+///
+/// Reads the whole stream before processing the contents and converts it to str.
+/// Use [`scrape_from_slice`] to omit the [`BufRead`].
+pub fn scrape<R>(mut reader: R) -> Result<Vec<PdfLink>, PdfScrapingError>
+where
+    R: Read,
+{
+    let mut buffer = Vec::new();
+    reader.read_to_end(&mut buffer)?;
+    scrape_from_slice(buffer)
+}
+gen_scrape_froms!(
+    scrape_from_slice(AsRef<[u8]>, no_slice) -> Result<Vec<PdfLink>, PdfScrapingError>
+);
+
+/// Takes a PDF as a byte slice and scrapes all links from it.
+///
+/// For encrypted files please use [`scrape_encrypted`] instead
+pub fn scrape_from_slice<T>(buffer: T) -> Result<Vec<PdfLink>, PdfScrapingError>
 where
     T: AsRef<[u8]>,
 {
-    scrape_from_doc(bytes_to_pdf(buf.as_ref())?)
+    scrape_from_doc(bytes_to_pdf(buffer.as_ref())?)
 }
-gen_scrape_froms!(scrape(AsRef<[u8]>) -> Result<Vec<PdfLink>, PdfScrapingError>);
 
 #[derive(Error, Debug)]
 pub enum PdfScrapingError {
