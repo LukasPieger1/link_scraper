@@ -33,32 +33,6 @@ macro_rules! gen_scrape_froms {
                 f.read_to_end(&mut buffer)?;
                 buffer
             };
-            scrape_from_slice(bytes)
-        }
-
-        /// Convenience function, that uses [`scrape`] to scrape links from a buffer.
-        #[inline(always)]
-        pub fn scrape_from_slice<T>(buffer: T) -> $output_type
-        where
-            T: AsRef<[u8]>,
-        {
-            $function_name(buffer)
-        }
-    };
-
-    ($function_name:ident(AsRef<[u8]>, no_slice) -> $output_type:ty) => {
-        /// Convenience function, that reads a file and uses [`scrape`] to scrape links from its content.
-        pub fn scrape_from_file<P>(path: P) -> $output_type
-        where
-            P: AsRef<std::path::Path>,
-        {
-            let bytes: Vec<u8> = {
-                let mut f = std::fs::File::open(&path)?;
-                let metadata = std::fs::metadata(path)?;
-                let mut buffer = Vec::with_capacity(metadata.len() as usize);
-                f.read_to_end(&mut buffer)?;
-                buffer
-            };
             $function_name(bytes)
         }
     };

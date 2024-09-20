@@ -22,9 +22,7 @@ where
     reader.read_to_end(&mut buffer)?;
     scrape_from_slice(buffer)
 }
-gen_scrape_froms!(
-    scrape_from_slice(AsRef<[u8]>, no_slice) -> Result<Vec<PdfLink>, PdfScrapingError>
-);
+gen_scrape_froms!(scrape_from_slice(AsRef<[u8]>) -> Result<Vec<PdfLink>, PdfScrapingError>);
 
 /// Takes a PDF as a byte slice and scrapes all links from it.
 ///

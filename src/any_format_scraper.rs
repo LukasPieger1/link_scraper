@@ -235,10 +235,10 @@ gen_try_format!(try_image(impl BufRead + Seek), "image", image, ImageLink => scr
 
 #[cfg(feature = "svg")]
 fn try_svg(reader: impl Read) -> Result<Vec<Link>, LinkScrapingError> {
-    return Ok(crate::formats::xml::svg::scrape(reader)?
+    Ok(crate::formats::xml::svg::scrape(reader)?
         .into_iter()
         .map(|link| Link::SvgLink(link))
-        .collect());
+        .collect())
 }
 #[cfg(not(feature = "svg"))]
 fn try_svg(_: impl Read) -> Result<Vec<Link>, LinkScrapingError> {

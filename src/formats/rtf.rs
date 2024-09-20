@@ -54,9 +54,7 @@ where
     scrape_from_string(std::str::from_utf8(bytes.as_ref())?)
 }
 
-gen_scrape_froms!(
-    scrape_from_slice(AsRef<[u8]>, no_slice) -> Result<Vec<RtfLink>, RtfScrapingError>
-);
+gen_scrape_froms!(scrape_from_slice(AsRef<[u8]>) -> Result<Vec<RtfLink>, RtfScrapingError>);
 
 #[derive(Error, Debug)]
 pub enum RtfScrapingError {
