@@ -1,4 +1,4 @@
-use crate::gen_scrape_froms;
+use crate::gen_scrape_from_file;
 use crate::helpers::find_urls;
 use itertools::Itertools;
 use rtf_parser::lexer::Lexer;
@@ -54,7 +54,7 @@ where
     scrape_from_string(std::str::from_utf8(bytes.as_ref())?)
 }
 
-gen_scrape_froms!(scrape_from_slice(AsRef<[u8]>) -> Result<Vec<RtfLink>, RtfScrapingError>);
+gen_scrape_from_file!(scrape_from_slice(AsRef<[u8]>) -> Result<Vec<RtfLink>, RtfScrapingError>);
 
 #[derive(Error, Debug)]
 pub enum RtfScrapingError {

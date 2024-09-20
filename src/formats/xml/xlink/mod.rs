@@ -8,8 +8,8 @@ use crate::formats::xml::xlink::XLinkFormatError::{
     ResourceOutsideOfExtendedError, SimpleInsideOfExtendedError,
 };
 use crate::formats::xml::XmlStartElement;
-use crate::gen_scrape_froms;
 use crate::helpers::find_urls;
+use crate::{gen_scrape_from_file, gen_scrape_from_slice};
 use itertools::Itertools;
 use std::io::Read;
 use thiserror::Error;
@@ -49,7 +49,8 @@ where
 
     Ok(collector)
 }
-gen_scrape_froms!(scrape(Read) -> Result<Vec<XLinkLink>, XLinkFormatError>);
+gen_scrape_from_file!(scrape(Read) -> Result<Vec<XLinkLink>, XLinkFormatError>);
+gen_scrape_from_slice!(scrape(Read) -> Result<Vec<XLinkLink>, XLinkFormatError>);
 
 #[derive(Error, Debug)]
 pub enum XLinkFormatError {

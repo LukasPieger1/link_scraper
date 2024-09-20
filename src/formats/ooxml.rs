@@ -1,7 +1,7 @@
 use crate::formats::compressed_formats_common::unified_unzip_scrape;
 use crate::formats::ooxml::OoxmlLinkKind::{Comment, Hyperlink, PlainText};
-use crate::gen_scrape_froms;
 use crate::helpers::find_urls;
+use crate::{gen_scrape_from_file, gen_scrape_from_slice};
 use std::fmt::{Display, Formatter};
 use std::io::{Cursor, Read, Seek};
 use thiserror::Error;
@@ -27,7 +27,8 @@ where
         }
     })
 }
-gen_scrape_froms!(scrape(Read) -> Result<Vec<OoxmlLink>, OoxmlScrapingError>);
+gen_scrape_from_file!(scrape(Read) -> Result<Vec<OoxmlLink>, OoxmlScrapingError>);
+gen_scrape_from_slice!(scrape(Read) -> Result<Vec<OoxmlLink>, OoxmlScrapingError>);
 
 #[derive(Error, Debug)]
 pub enum OoxmlScrapingError {

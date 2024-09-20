@@ -1,5 +1,5 @@
 use crate::formats::rtf::scrape_from_string;
-use crate::gen_scrape_froms;
+use crate::gen_scrape_from_file;
 use crate::helpers::find_urls;
 use itertools::Itertools;
 use mupdf::{Document, Page};
@@ -22,7 +22,7 @@ where
     reader.read_to_end(&mut buffer)?;
     scrape_from_slice(buffer)
 }
-gen_scrape_froms!(scrape_from_slice(AsRef<[u8]>) -> Result<Vec<PdfLink>, PdfScrapingError>);
+gen_scrape_from_file!(scrape_from_slice(AsRef<[u8]>) -> Result<Vec<PdfLink>, PdfScrapingError>);
 
 /// Takes a PDF as a byte slice and scrapes all links from it.
 ///

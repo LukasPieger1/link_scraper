@@ -3,8 +3,8 @@ use std::fmt::{Display, Formatter};
 use std::io;
 use thiserror::Error;
 
-use crate::gen_scrape_froms;
 use crate::helpers::find_urls;
+use crate::{gen_scrape_from_file, gen_scrape_from_slice};
 
 pub fn scrape<R>(mut reader: R) -> Result<Vec<ImageLink>, ImageScrapingError>
 where
@@ -35,7 +35,8 @@ where
         .flatten()
         .collect())
 }
-gen_scrape_froms!(scrape(Read) -> Result<Vec<ImageLink>, ImageScrapingError>);
+gen_scrape_from_file!(scrape(Read) -> Result<Vec<ImageLink>, ImageScrapingError>);
+gen_scrape_from_slice!(scrape(Read) -> Result<Vec<ImageLink>, ImageScrapingError>);
 
 #[derive(Error, Debug)]
 pub enum ImageScrapingError {

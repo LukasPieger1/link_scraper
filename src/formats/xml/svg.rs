@@ -1,6 +1,6 @@
 use crate::formats::xml::svg::SvgLinkKind::{Attribute, Comment, NameSpace, Script, Text};
 use crate::formats::xml::XmlLinkKind;
-use crate::gen_scrape_froms;
+use crate::{gen_scrape_from_file, gen_scrape_from_slice};
 use std::fmt::{Display, Formatter};
 use std::io::Read;
 use thiserror::Error;
@@ -26,7 +26,8 @@ where
         })
         .collect())
 }
-gen_scrape_froms!(scrape(Read) -> Result<Vec<SvgLink>, SvgScrapingError>);
+gen_scrape_from_file!(scrape(Read) -> Result<Vec<SvgLink>, SvgScrapingError>);
+gen_scrape_from_slice!(scrape(Read) -> Result<Vec<SvgLink>, SvgScrapingError>);
 
 #[derive(Error, Debug)]
 pub enum SvgScrapingError {

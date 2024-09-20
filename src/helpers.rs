@@ -19,7 +19,20 @@ pub fn find_urls(content: &str) -> Vec<linkify::Link> {
 }
 
 #[macro_export]
-macro_rules! gen_scrape_froms {
+macro_rules! gen_scrape_from_slice {
+    ($function_name:ident(Read) -> $output_type:ty) => {
+        /// Convenience function, that uses [`scrape`] to scrape links from a buffer.
+        pub fn scrape_from_slice<T>(buffer: T) -> $output_type
+        where
+            T: AsRef<[u8]>,
+        {
+            $function_name(std::io::Cursor::new(buffer.as_ref()))
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! gen_scrape_from_file {
     ($function_name:ident(AsRef<[u8]>) -> $output_type:ty) => {
         /// Convenience function, that reads a file and uses [`scrape`] to scrape links from its content.
         pub fn scrape_from_file<P>(path: P) -> $output_type
@@ -44,14 +57,6 @@ macro_rules! gen_scrape_froms {
             P: AsRef<std::path::Path>,
         {
             $function_name(std::io::BufReader::new(std::fs::File::open(path)?))
-        }
-
-        /// Convenience function, that uses [`scrape`] to scrape links from a buffer.
-        pub fn scrape_from_slice<T>(buffer: T) -> $output_type
-        where
-            T: AsRef<[u8]>,
-        {
-            $function_name(std::io::Cursor::new(buffer.as_ref()))
         }
     };
 }

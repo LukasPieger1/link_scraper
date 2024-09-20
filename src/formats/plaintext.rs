@@ -1,5 +1,5 @@
-use crate::gen_scrape_froms;
 use crate::helpers::find_urls;
+use crate::{gen_scrape_from_file, gen_scrape_from_slice};
 use std::fmt::{Display, Formatter};
 use std::io::BufRead;
 use thiserror::Error;
@@ -29,7 +29,8 @@ where
     }
     Ok(collector)
 }
-gen_scrape_froms!(scrape(Read)-> Result<Vec<TextFileLink>, TextFileScrapingError>);
+gen_scrape_from_file!(scrape(Read)-> Result<Vec<TextFileLink>, TextFileScrapingError>);
+gen_scrape_from_slice!(scrape(Read)-> Result<Vec<TextFileLink>, TextFileScrapingError>);
 
 #[derive(Error, Debug)]
 pub enum TextFileScrapingError {

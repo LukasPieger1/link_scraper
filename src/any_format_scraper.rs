@@ -1,4 +1,4 @@
-use crate::gen_scrape_froms;
+use crate::{gen_scrape_from_file, gen_scrape_from_slice};
 use crate::helpers::find_urls;
 use infer::Type;
 use std::fmt::{Display, Formatter};
@@ -42,7 +42,8 @@ where
         _ => infer_and_scrape(reader),
     }
 }
-gen_scrape_froms!(scrape(Read) -> Result<Vec<Link>, LinkScrapingError>);
+gen_scrape_from_slice!(scrape(Read) -> Result<Vec<Link>, LinkScrapingError>);
+gen_scrape_from_file!(scrape(Read) -> Result<Vec<Link>, LinkScrapingError>);
 
 #[derive(Error, Debug)]
 pub enum LinkScrapingError {
