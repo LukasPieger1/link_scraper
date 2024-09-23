@@ -1,10 +1,8 @@
-use crate::formats::rtf::scrape_from_string;
 use crate::gen_scrape_from_file;
 use crate::helpers::find_urls;
-use itertools::Itertools;
 use mupdf::{Document, Page};
 use std::fmt::{Display, Formatter};
-use std::io::{BufRead, Read};
+use std::io::{Read};
 use std::string::String;
 use thiserror::Error;
 
