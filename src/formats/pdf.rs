@@ -1,17 +1,36 @@
-use std::fmt::{Display, Formatter};
-use std::string::String;
-use thiserror::Error;
-use mupdf::{Document, Page};
 use crate::gen_scrape_from_file;
 use crate::helpers::find_urls;
+use mupdf::{Document, Page};
+use std::fmt::{Display, Formatter};
+use std::io::{Read};
+use std::string::String;
+use thiserror::Error;
 
-/// Reads a PDF as a bytearray and scrapes all links from it.
+/// Takes a PDF as a byte stream and scrapes all links from it.
 ///
 /// For encrypted files please use [`scrape_encrypted`] instead
-pub fn scrape(bytes: &[u8]) -> Result<Vec<PdfLink>, PdfScrapingError> {
-    scrape_from_doc(bytes_to_pdf(bytes)?)
+///
+/// Reads the whole stream before processing the contents and converts it to str.
+/// Use [`scrape_from_slice`] to omit the [`BufRead`].
+pub fn scrape<R>(mut reader: R) -> Result<Vec<PdfLink>, PdfScrapingError>
+where
+    R: Read,
+{
+    let mut buffer = Vec::new();
+    reader.read_to_end(&mut buffer)?;
+    scrape_from_slice(buffer)
 }
-gen_scrape_from_file!(Result<Vec<PdfLink>, PdfScrapingError>);
+gen_scrape_from_file!(scrape_from_slice(AsRef<[u8]>) -> Result<Vec<PdfLink>, PdfScrapingError>);
+
+/// Takes a PDF as a byte slice and scrapes all links from it.
+///
+/// For encrypted files please use [`scrape_encrypted`] instead
+pub fn scrape_from_slice<T>(buffer: T) -> Result<Vec<PdfLink>, PdfScrapingError>
+where
+    T: AsRef<[u8]>,
+{
+    scrape_from_doc(bytes_to_pdf(buffer.as_ref())?)
+}
 
 #[derive(Error, Debug)]
 pub enum PdfScrapingError {
@@ -42,13 +61,13 @@ impl Display for PdfLink {
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PdfLinkLocation {
-    pub page: usize
+    pub page: usize,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum PdfLinkKind {
     PlainText,
-    Hyperlink
+    Hyperlink,
 }
 
 /// Like [`scrape`] for encrypted files.
@@ -87,27 +106,35 @@ fn scrape_from_doc(doc: Document) -> Result<Vec<PdfLink>, PdfScrapingError> {
 }
 
 /// Finds plaintext links on a page
-fn find_text_links(page: &Page, page_number: usize, links: &mut Vec<PdfLink>) -> Result<(), PdfScrapingError> {
-    find_urls(&page.to_text()?).iter()
-        .for_each(|link|
-            links.push(PdfLink {
-                url: link.as_str().to_string(),
-                location: PdfLinkLocation { page: page_number },
-                kind: PdfLinkKind::PlainText,
-            }));
+fn find_text_links(
+    page: &Page,
+    page_number: usize,
+    links: &mut Vec<PdfLink>,
+) -> Result<(), PdfScrapingError> {
+    find_urls(&page.to_text()?).iter().for_each(|link| {
+        links.push(PdfLink {
+            url: link.as_str().to_string(),
+            location: PdfLinkLocation { page: page_number },
+            kind: PdfLinkKind::PlainText,
+        })
+    });
     Ok(())
 }
 
 /// Finds hyperlinks on a page
-fn find_hyperlinks(page: &Page, page_number: usize, links: &mut Vec<PdfLink>) -> Result<(), PdfScrapingError> {
+fn find_hyperlinks(
+    page: &Page,
+    page_number: usize,
+    links: &mut Vec<PdfLink>,
+) -> Result<(), PdfScrapingError> {
     for link in page.links()? {
-        find_urls(&link.uri).iter()
-            .for_each(|link|
-                links.push(PdfLink { 
-                    url: link.as_str().to_string(),
-                    location: PdfLinkLocation { page: page_number },
-                    kind: PdfLinkKind::Hyperlink,
-                }));
+        find_urls(&link.uri).iter().for_each(|link| {
+            links.push(PdfLink {
+                url: link.as_str().to_string(),
+                location: PdfLinkLocation { page: page_number },
+                kind: PdfLinkKind::Hyperlink,
+            })
+        });
     }
     Ok(())
 }
@@ -115,7 +142,6 @@ fn find_hyperlinks(page: &Page, page_number: usize, links: &mut Vec<PdfLink>) ->
 fn bytes_to_pdf(bytes: &[u8]) -> Result<Document, PdfScrapingError> {
     Ok(Document::from_bytes(bytes, "file.pdf")?)
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -131,16 +157,30 @@ mod tests {
     fn scrape_pdf_test() {
         let links = scrape(TEST_PDF).unwrap();
         println!("{:?}", links);
-        assert!(links.iter().any(|it| it.url == "https://hyperlink.test.com/" && it.kind == PdfLinkKind::Hyperlink));
-        assert!(links.iter().any(|it| it.url == "https://plaintext.test.com" && it.kind == PdfLinkKind::PlainText));
+        assert!(
+            links
+                .iter()
+                .any(|it| it.url == "https://hyperlink.test.com/"
+                    && it.kind == PdfLinkKind::Hyperlink)
+        );
+        assert!(links
+            .iter()
+            .any(|it| it.url == "https://plaintext.test.com" && it.kind == PdfLinkKind::PlainText));
     }
 
     #[test]
     fn scrape_pdfa_test() {
         let links = scrape(TEST_PDFA).unwrap();
         println!("{:?}", links);
-        assert!(links.iter().any(|it| it.url == "https://hyperlink.test.com/" && it.kind == PdfLinkKind::Hyperlink));
-        assert!(links.iter().any(|it| it.url == "https://plaintext.test.com" && it.kind == PdfLinkKind::PlainText));
+        assert!(
+            links
+                .iter()
+                .any(|it| it.url == "https://hyperlink.test.com/"
+                    && it.kind == PdfLinkKind::Hyperlink)
+        );
+        assert!(links
+            .iter()
+            .any(|it| it.url == "https://plaintext.test.com" && it.kind == PdfLinkKind::PlainText));
     }
 
     #[test]

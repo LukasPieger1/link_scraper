@@ -1,22 +1,27 @@
-use std::fmt::{Display, Formatter};
-use std::io::{BufRead, BufReader};
-use thiserror::Error;
-use crate::gen_scrape_from_file;
 use crate::helpers::find_urls;
+use crate::{gen_scrape_from_file, gen_scrape_from_slice};
+use std::fmt::{Display, Formatter};
+use std::io::BufRead;
+use thiserror::Error;
 
-pub fn scrape(bytes: &[u8]) -> Result<Vec<TextFileLink>, TextFileScrapingError> {
+pub fn scrape<R>(mut buf_reader: R) -> Result<Vec<TextFileLink>, TextFileScrapingError>
+where
+    R: BufRead,
+{
     let mut collector: Vec<TextFileLink> = vec![];
-    let mut buf_reader = BufReader::new(bytes);
     let mut contents = String::new();
     let mut line_result = buf_reader.read_line(&mut contents)?;
     let mut current_line = 1;
     while line_result > 0 {
-        find_urls(&contents)
-            .iter()
-            .for_each(|link| collector.push(TextFileLink {
+        find_urls(&contents).iter().for_each(|link| {
+            collector.push(TextFileLink {
                 url: link.as_str().to_string(),
-                location: TextFileLinkLocation { line: current_line, pos: link.start() }
-            }));
+                location: TextFileLinkLocation {
+                    line: current_line,
+                    pos: link.start(),
+                },
+            })
+        });
 
         contents.clear();
         line_result = buf_reader.read_line(&mut contents)?;
@@ -24,7 +29,8 @@ pub fn scrape(bytes: &[u8]) -> Result<Vec<TextFileLink>, TextFileScrapingError> 
     }
     Ok(collector)
 }
-gen_scrape_from_file!(Result<Vec<TextFileLink>, TextFileScrapingError>);
+gen_scrape_from_file!(scrape(Read)-> Result<Vec<TextFileLink>, TextFileScrapingError>);
+gen_scrape_from_slice!(scrape(Read)-> Result<Vec<TextFileLink>, TextFileScrapingError>);
 
 #[derive(Error, Debug)]
 pub enum TextFileScrapingError {
@@ -47,7 +53,7 @@ impl Display for TextFileLink {
 #[derive(Debug, Clone)]
 pub struct TextFileLinkLocation {
     pub line: usize,
-    pub pos: usize
+    pub pos: usize,
 }
 
 #[cfg(test)]
@@ -60,8 +66,12 @@ mod tests {
     fn scrape_test() {
         let links = scrape(TEST_XML).unwrap();
         println!("{:?}", links);
-        assert!(links.iter().any(|it| it.url == "https://attribute.test.com"));
-        assert!(links.iter().any(|it| it.url == "https://plaintext.test.com"));
+        assert!(links
+            .iter()
+            .any(|it| it.url == "https://attribute.test.com"));
+        assert!(links
+            .iter()
+            .any(|it| it.url == "https://plaintext.test.com"));
         assert!(links.iter().any(|it| it.url == "https://comment.test.com"));
         assert!(links.iter().any(|it| it.url == "https://cdata.test.com"));
         assert!(links.iter().any(|it| it.url == "https://ns.test.com"));
